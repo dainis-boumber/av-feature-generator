@@ -1,0 +1,8 @@
+FROM tensorflow/tensorflow-latest-devel-gpu-py3
+RUN apt-get update 
+RUN apt-get upgrade
+RUN apt-get install -y vim wget
+RUN pip3 install -U scikit-learn spacy
+RUN python3 -m spacy download en
+WORKDIR /root/av-feature-generator
+
