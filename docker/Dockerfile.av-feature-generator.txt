@@ -1,8 +1,15 @@
 FROM tensorflow/tensorflow:latest-devel-gpu-py3
 RUN apt-get update 
+RUN apt-get install -y sudo --no-install-recommends apt-utils
 RUN apt-get upgrade -y
-RUN apt-get install -y vim wget
-RUN pip3 install -U numpy scikit-learn spacy
+RUN apt-get install -y vim wget git python3-dev unzip
+RUN pip3 install -U numpy scikit-learn spacy scikit-image 
 RUN python3 -m spacy download en
+WORKDIR /tensorflow
+RUN git clone -v https://github.com/tensorflow/models.git
+WORKDiR /tensorflow/models
+RUN pip3 install .
+WORKDIR /tensorflow/models/slim 
+RUN pip3 install .
 WORKDIR /root/av-feature-generator
 

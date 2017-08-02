@@ -1,0 +1,18 @@
+services:
+  av-feature-generator-svc:
+    container_name: av-feature-generator
+    devices:
+    - /dev/nvidia0
+    - /dev/nvidiactl
+    - /dev/nvidia-uvm
+    - /dev/nvidia-uvm-tools
+    image: av/feature-generator
+    ports:
+    - 6006:6006
+    volumes:
+    - /media/dainis/DATA/PatternAnalysisLab/Arjun/AV/av-feature-generator:/root/av-feature-generator
+    - nvidia_driver_375.39:/usr/local/nvidia:ro
+version: '2'
+volumes:
+  nvidia_driver_375.39:
+    external: true

@@ -1,6 +1,6 @@
 import tensorflow as tf
 from enum import Enum
-from tensorflow.models.autoencoder.autoencoder_models.DenoisingAutoencoder import
+import
 
 class StackedAutoEncoder():
 
