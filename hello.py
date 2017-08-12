@@ -1,7 +1,7 @@
-
+from utils.preprocess import PAN
 
 def experiment():
-    pass
+    pan = PAN('15')
 
 
 if __name__ == '__main__':
