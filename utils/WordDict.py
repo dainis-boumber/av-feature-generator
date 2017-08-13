@@ -21,6 +21,8 @@ def getListListPANAndFoldersPAN(aPath):
             continue
         foldersPAN.append(d)
         for f in os.listdir(aPath + "/" + d + "/"):
+            if os.path.isfile(aPath + "/" + d + "/" + f):
+                continue
             aListPAN.append(aPath + "/" + d + "/" + f)
         aListListPAN.append(sorted(aListPAN))
     foldersPAN, aListListPAN = zip(*sorted(zip(foldersPAN, aListListPAN)))

@@ -1,7 +1,7 @@
-from utils.preprocess import PAN
+from utils.ds_models import PAN
 
 def experiment():
-    pan = PAN('15')
+    pan = PAN('14')
 
 
 if __name__ == '__main__':
