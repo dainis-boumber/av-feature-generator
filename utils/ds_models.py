@@ -1,5 +1,3 @@
-import spacy
-from textacy import preprocess
 import os
 from utils.WordDict import getListListPANAndFoldersPAN
 
