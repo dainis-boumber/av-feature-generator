@@ -4,7 +4,8 @@ from base.autoencoder_models.VariationalAutoencoder import VariationalAutoencode
 from base.autoencoder_models.DenoisingAutoencoder import MaskingNoiseAutoencoder
 from base.autoencoder_models.DenoisingAutoencoder import AdditiveGaussianNoiseAutoencoder as GaussianNoiseAutoencoder
 
-class StackedAutoEncoder():
+
+class StackedAutoEncoder:
 
     def __init__(self, layers=(40, 20, 10, 5), epochs=(300, 200, 100), batch_size = 8, noise_type='masking'):
         assert(len(layers) > 1)
@@ -27,7 +28,6 @@ class StackedAutoEncoder():
             else:
                 raise ValueError
 
-
     def train(self, X):
         inputs = X
         for i in range(1, len(self.layers)):
@@ -39,7 +39,7 @@ class StackedAutoEncoder():
             total_batch = int(len(inputs) / self.batch_size)
             # Loop over all batches
             for i in range(total_batch):
-                batch_xs = self._get_random_block_from_data(X, self.batch_size)
+                batch_xs = self._get_random_block_from_data(inputs, self.batch_size)
 
                 # Fit training using batch data
                 cost = self.ae[hidden_layer_ndx].partial_fit(batch_xs)
@@ -54,8 +54,6 @@ class StackedAutoEncoder():
 
         return self.ae[hidden_layer_ndx].hidden
 
-
     def _get_random_block_from_data(self, data, batch_size):
         start_index = np.random.randint(0, len(data) - batch_size)
         return data[start_index:(start_index + batch_size)]
-
