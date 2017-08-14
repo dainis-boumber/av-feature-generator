@@ -1,7 +1,7 @@
 import spacy
 from textacy import preprocess as pp
 
-def preprocess(text, fix_unicode=False, lowercase=False, transliterate=False,
+def preprocess(text, fix_unicode=True, lowercase=False, transliterate=False,
                     no_urls=False, no_emails=False, no_phone_numbers=False,
                     no_numbers=False, no_currency_symbols=False, no_punct=False,
                     no_contractions=False, no_accents=False):
