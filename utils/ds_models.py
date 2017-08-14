@@ -30,13 +30,15 @@ class PAN:
         p = os.path.abspath(__file__ + "/../../data/PAN" + str(year) + '/')
         pair_dirs, split_names = getListListPANAndFoldersPAN(p)
         labels = []
+        self.splits = []
+        self.name = 'PAN' + str(year)
         for i, splitname in enumerate(split_names):
             if 'train' in split_names:
                 with open('truth.txt') as truth:
                     for line in truth:
                         labels.append(line.strip().split()[1])
-                    Split(splitname, pair_dirs[i], labels)
+                    self.splits.append(Split(splitname, pair_dirs[i], labels))
             else:
-                Split(splitname, pair_dirs[i], None)
+                self.splits.append(Split(splitname, pair_dirs[i], None))
 
 
