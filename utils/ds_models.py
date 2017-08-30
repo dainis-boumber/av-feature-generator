@@ -27,7 +27,7 @@ class Split:
                 self.pairs.append(Pair(path, None))
 
 
-class PAN:
+class PANData:
     def __init__(self, year):
         p = os.path.abspath(__file__ + "/../../data/PAN" + str(year) + '/')
         pair_dirs, split_names = getListListPANAndFoldersPAN(p)
