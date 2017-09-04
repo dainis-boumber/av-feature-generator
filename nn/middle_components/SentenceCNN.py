@@ -11,8 +11,7 @@ class SentenceCNN(object):
     """
 
     def __init__(
-            self, previous_component, sequence_length,
-            embedding_size, filter_size_lists, num_filters,
+            self, previous_component, data, filter_size_lists, num_filters,
             dropout=0.0, batch_normalize=False, elu=False, fc=[], l2_reg_lambda=0.0):
 
         self.is_training = tf.placeholder(tf.bool, name='is_training')

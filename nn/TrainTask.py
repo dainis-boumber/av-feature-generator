@@ -2,7 +2,7 @@ import logging
 import os
 import datetime
 import tensorflow as tf
-from networks.NetworkBuilder import NetworkBuilder
+from nn.NetworkBuilder import NetworkBuilder
 from data_helpers.DataHelpers import DataHelper
 import utils.ArchiveManager as AM
 

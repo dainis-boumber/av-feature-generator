@@ -18,6 +18,7 @@ def get_exp_logger(am):
     logging.info("log created: " + log_path)
 
 
+
 if __name__ == "__main__":
 
     ###############################################
@@ -35,27 +36,31 @@ if __name__ == "__main__":
     #
     ################################################
 
-    input_component = "PAN14"
-    middle_component = "DocumentCNN"
-    output_component = "LSAA"
+    data = "PAN14"
+    input_comp_name = ""
+    middle_comp_name = "DocumentCNN"
+    output_comp_name = "LSAA"
 
-    am = ArchiveManager(input_component, middle_component)
+    am = ArchiveManager(data, middle_comp_name)
     get_exp_logger(am)
     logging.warning('===================================================')
     logging.debug("Loading data...")
 
-    if input_component == "PAN13":
+    if data == "PAN13":
         dater = PANData('13')
-    elif input_component == "PAN14":
+    elif data == "PAN14":
         dater = PANData('14')
-    elif input_component == "PAN15":
+    elif data == "PAN15":
         dater = PANData('15')
     else:
         raise NotImplementedError
 
+    input_comp = get_input_component(input_component=input_comp_name)
+
+
     tt = TrainTask(data_helper=dater, am=am,
-                   input_component=input_component, middle_component=middle_component,
-                   output_component=output_component,
+                   input_component=data, middle_component=middle_comp_name,
+                   output_component=output_comp_name,
                    batch_size=32, evaluate_every=500, checkpoint_every=5000, max_to_keep=6,
                    restore_path=None)
 
