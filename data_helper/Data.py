@@ -5,6 +5,9 @@ class DataObject:
     def __init__(self, name, size):
         self.name = name
         self.size = size
+
+        self.num_classes = None
+
         self.file_id = None
         self.raw = None
         self.value = None

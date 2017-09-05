@@ -1,52 +1,42 @@
-from nn.input_components.OneSequence import OneSequence
+from data_helper.Data import DataObject
 from nn.input_components.OneDocSequence import OneDocSequence
-from nn.middle_components.SentenceCNN import SentenceCNN
+from nn.input_components.OneSequence import OneSequence
 from nn.middle_components.DocumentCNN import DocumentCNN
-from nn.output_components.Output import TripAdvisorOutput
+from nn.middle_components.SentenceCNN import SentenceCNN
+from nn.output_components.Output import Output
 
-from utils.Data import DataObject
 
-
-class NetworkBuilder:
-    def __init__(
-            self, data, document_length, sequence_length, num_aspects, num_classes,
-            embedding_size, filter_size_lists, num_filters,
-            input_component, middle_component, output_component,
-            l2_reg_lambda, dropout, batch_normalize, elu, fc):
-
-        vocab_size = len(data.vocab)
+class CNNNetworkBuilder:
+    """I"m currently calling this CNN builder because i'm not sure if it can handle future
+    RNN parameters, and just for flexibility and ease of management the component maker is being made into
+    separate function
+    """
+    def __init__(self, input_comp, middle_comp, output_comp):
 
         # input component =====
-        self.input_comp = self.get_input_component()
+        self.input_comp = input_comp
 
         self.input_x = self.input_comp.input_x
         self.input_y = self.input_comp.input_y
         self.dropout_keep_prob = self.input_comp.dropout_keep_prob
 
         # middle component =====
-        self.middle_comp = self.get_middle_component()
-
-        prev_layer = self.middle_comp.get_last_layer_info()
-        l2_sum = self.middle_comp.l2_sum
+        self.middle_comp = middle_comp
 
         # output component =====
+        self.output_comp = output_comp
 
+        self.scores = self.output_comp.scores
+        self.predictions = self.output_comp.predictions
+        self.loss = self.output_comp.loss
+        self.accuracy = self.output_comp.accuracy
 
-        self.scores = self.output.scores
-        self.predictions = self.output.predictions
-        self.loss = self.output.loss
-        self.accuracy = self.output.accuracy
-
-        try:
-            self.aspect_accuracy = self.output.aspect_accuracy
-        except NameError:
-            self.aspect_accuracy = None
-
-    def get_input_component(self, input_code, data):
+    @staticmethod
+    def get_input_component(input_name, data):
         # input component =====
-        if input_code == "Sentence":
+        if input_name == "Sentence":
             input_comp = OneSequence(data)
-        elif input_code == "Document":
+        elif input_name == "Document":
             raise NotImplementedError
             input_comp = OneDocSequence(document_length=document_length, sequence_length=sequence_length,
                                         num_classes=num_classes,
@@ -57,15 +47,16 @@ class NetworkBuilder:
 
         return input_comp
 
-    def get_middle_component(self, middle_code, input_comp, data,
+    @staticmethod
+    def get_middle_component(middle_name, input_comp, data,
                              filter_size_lists=None, num_filters=None, dropout=None,
                              batch_norm=None, elu=None, fc=[], l2_reg=0.0):
-        if middle_code == 'Origin':
+        if middle_name == 'Origin':
             middle_comp = SentenceCNN(previous_component=input_comp, data=data,
                                       filter_size_lists=filter_size_lists, num_filters=num_filters,
                                       dropout=dropout, batch_normalize=batch_norm, elu=elu,
                                       fc=fc, l2_reg_lambda=l2_reg)
-        elif middle_code == "DocumentCNN":
+        elif middle_name == "DocumentCNN":
             middle_comp = DocumentCNN(previous_component=input_comp, data=data,
                                       filter_size_lists=filter_size_lists, num_filters=num_filters,
                                       dropout=dropout, batch_normalize=batch_norm, elu=elu,
@@ -73,29 +64,22 @@ class NetworkBuilder:
         else:
             raise NotImplementedError
 
-        try:
-            self.is_training = self.middle_comp.is_training
-        except NameError:
-            self.is_training = None
+        return middle_comp
 
-        return middle_code
-
-    def get_output_component(self, output_code):
-        if "TripAdvisor" in output_code:
-            self.output = TripAdvisorOutput(self.input_comp.input_y, prev_layer, num_classes, l2_sum, l2_reg_lambda)
-        elif "LSAA" in output_code:
-            self.output = LSAAOutput(prev_layer=prev_layer, input_y=self.input_comp.input_y,
-                                     num_aspects=num_aspects, num_classes=num_classes,
-                                     document_length=document_length,
-                                     l2_sum=l2_sum, l2_reg_lambda=l2_reg_lambda)
+    @staticmethod
+    def get_output_component(output_name, middle_comp, data, l2_reg=0.0):
+        if "??" in output_name:
+            output_comp = Output(middle_comp, data=data, l2_reg=l2_reg)
         else:
             raise NotImplementedError
+
+        return output_comp
 
 
 if __name__ == "__main__":
     data = DataObject("test", 100)
     data.vocab = [1, 2, 3]
-    cnn = NetworkBuilder(
+    cnn = CNNNetworkBuilder(
         data=data,
         document_length=64,
         sequence_length=1024,
