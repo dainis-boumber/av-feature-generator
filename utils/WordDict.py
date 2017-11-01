@@ -12,19 +12,19 @@ def dictFromFile(aFileName):
 
 
 def getListListPANAndFoldersPAN(aPath):
-    aListListPAN = []
-    foldersPAN = []
+    split_name = []
+    split_instance_list = []
 
     for d in os.listdir(aPath):
         aListPAN = []
         if os.path.isfile(aPath + "/" + d):
             continue
-        foldersPAN.append(d)
+        split_name.append(d)
         for f in os.listdir(aPath + "/" + d + "/"):
             if os.path.isfile(aPath + "/" + d + "/" + f):
                 continue
             aListPAN.append(aPath + "/" + d + "/" + f)
-        aListListPAN.append(sorted(aListPAN))
-    foldersPAN, aListListPAN = zip(*sorted(zip(foldersPAN, aListListPAN)))
+        split_instance_list.append(sorted(aListPAN))
+    split_name, split_instance_list = zip(*sorted(zip(split_name, split_instance_list)))
 
-    return aListListPAN, foldersPAN
+    return split_instance_list, split_name

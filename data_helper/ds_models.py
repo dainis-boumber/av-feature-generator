@@ -1,6 +1,7 @@
 import os
 from utils.WordDict import getListListPANAndFoldersPAN
 
+
 class Pair:
     def __init__(self, full_pair_dir_path, label):
         self.unknown = None
@@ -14,6 +15,7 @@ class Pair:
             else:
                 self.known.append(path)
 
+
 class Split:
     def __init__(self, name, full_pair_dir_paths, labels=None):
         self.name = name
@@ -24,21 +26,21 @@ class Split:
             else:
                 self.pairs.append(Pair(path, None))
 
-class PAN:
 
+class PANData:
     def __init__(self, year):
         p = os.path.abspath(__file__ + "/../../data/PAN" + str(year) + '/')
         pair_dirs, split_names = getListListPANAndFoldersPAN(p)
         labels = []
         self.splits = []
         self.name = 'PAN' + str(year)
-        for i, splitname in enumerate(split_names):
-            if 'train' in split_names:
-                with open('truth.txt') as truth:
+        for i, split_name in enumerate(split_names):
+            if 'train' in split_name:
+                with open(os.path.join(p, split_name, 'truth.txt')) as truth:
                     for line in truth:
                         labels.append(line.strip().split()[1])
-                    self.splits.append(Split(splitname, pair_dirs[i], labels))
+                    self.splits.append(Split(split_name, pair_dirs[i], labels))
             else:
-                self.splits.append(Split(splitname, pair_dirs[i], None))
+                self.splits.append(Split(split_name, pair_dirs[i], None))
 
 
