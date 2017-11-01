@@ -1,0 +1,3 @@
+[submodule "CharRNN"]
+	path = CharRNN
+	url = https://github.com/dainis-boumber/CharRNN.git
