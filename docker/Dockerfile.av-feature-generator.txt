@@ -11,6 +11,7 @@ RUN echo 'root:Db340934' | chpasswd
 # configure sshd to let root login
 RUN sed -ri 's/^PermitRootLogin\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config
 RUN sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
+
 # expose SSH port
 EXPOSE 22
 
@@ -25,8 +26,13 @@ RUN python3 -m spacy download en
 RUN mkdir /root/inputs
 RUN mkdir /root/outputs
 # this is where our projects go
-RUN mkdir /root/workspace
+# notebook should run on the background as well as sshd
+RUN rm /run_jupyter.sh
+COPY start.sh /
+RUN chmod +x /start.sh
 # set default directory we enter on logon to home directory
-WORKDIR /root
-CMD ["/usr/sbin/sshd", "-D"]
 
+RUN pip install --upgrade https://github.com/Lasagne/Lasagne/archive/master.zip
+WORKDIR /root
+RUN ln -s /start.sh /root/start_notebook.sh
+CMD ["/usr/sbin/sshd", "-D"]

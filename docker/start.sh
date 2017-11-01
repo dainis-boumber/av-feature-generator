@@ -1,2 +1,2 @@
 #!/bin/bash
-exec jupyter notebook &> /dev/null &
+exec jupyter notebook --allow-root
