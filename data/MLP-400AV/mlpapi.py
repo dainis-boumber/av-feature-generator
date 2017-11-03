@@ -1,11 +1,35 @@
 import os
 import csv
 import random as rand
-import numpy as np
 import sklearn.model_selection as select
+import spacy
 
 # API container, static methods only
-class MLP400AV_API:
+class MLPAPI:
+
+    AUTHORS = (
+        'geoffrey_hinton',
+        'vapnik',
+        'bernard_scholkopf',
+        'thomas_l_griffiths',
+        'yann_lecun',
+        'xiaojin_zhu',
+        'yee_whye_teh',
+        'radford_neal',
+        'david_blei',
+        'alex_smola',
+        'michael_jordan',
+        'zoubin_ghahramani',
+        'daphne_koller',
+        'lawrence_saul',
+        'trevor_hastie',
+        'thorsten_joachims',
+        'yoshua_bengio',
+        'andrew_y_ng',
+        'tom_mitchell',
+        'robert_tibshirani'
+        )
+
 
     def __init__(self):
         pass
@@ -37,12 +61,12 @@ class MLP400AV_API:
         return yes_no, bins
 
     @staticmethod
-    def write_pairs(filename, label, yes_no, bins, params='w'):
+    def write_pairs(filename, label, yes_no, bins):
         if label is not 'YES' and label is not 'NO':
             raise ValueError('Label must always be YES or NO')
 
         pairs = []
-        with open(filename, params) as of:
+        with open(filename, 'w') as of:
             for unknown, author in yes_no:
                 for b in bins:
                     for paper in b[0]:
@@ -117,27 +141,72 @@ class MLP400AV_API:
         yes_no_pairs = []
 
         for i ,label in enumerate(labels):
-            p = 'w'
-
-            authors, paper_authors, lines = MLP400AV_API.read_input(label=label)
-            tr_bins, tst_bins, val_bins = MLP400AV_API.tr_tst_val_split(authors, paper_authors, lines)
-            yes_no, bins = MLP400AV_API.make_pairs(bins=tr_bins, label=label, paper_authors=paper_authors)
-            tr_pairs = MLP400AV_API.write_pairs(filename=label + 'train.csv', label=label, yes_no=yes_no, bins=bins, params=p)
-            yes_no, bins = MLP400AV_API.make_pairs(bins=tst_bins, label=label, paper_authors=paper_authors)
-            test_pairs = MLP400AV_API.write_pairs(filename=label + 'test.csv', label=label, yes_no=yes_no, bins=bins, params=p)
-            yes_no, bins = MLP400AV_API.make_pairs(bins=val_bins, label=label, paper_authors=paper_authors)
-            val_pairs = MLP400AV_API.write_pairs(filename=label + 'val.csv', label=label, yes_no=yes_no, bins=bins, params=p)
+            authors, paper_authors, lines = MLPAPI.read_input(label=label)
+            tr_bins, tst_bins, val_bins = MLPAPI.tr_tst_val_split(authors, paper_authors, lines)
+            yes_no, bins = MLPAPI.make_pairs(bins=tr_bins, label=label, paper_authors=paper_authors)
+            tr_pairs = MLPAPI.write_pairs(filename=label + 'train.csv', label=label, yes_no=yes_no, bins=bins)
+            yes_no, bins = MLPAPI.make_pairs(bins=tst_bins, label=label, paper_authors=paper_authors)
+            test_pairs = MLPAPI.write_pairs(filename=label + 'test.csv', label=label, yes_no=yes_no, bins=bins)
+            yes_no, bins = MLPAPI.make_pairs(bins=val_bins, label=label, paper_authors=paper_authors)
+            val_pairs = MLPAPI.write_pairs(filename=label + 'val.csv', label=label, yes_no=yes_no, bins=bins)
             yes_no_pairs.append((tr_pairs, test_pairs, val_pairs))
 
         return yes_no_pairs
 
     @staticmethod
-    def load_dataset():
-        pass
+    def load_dataset(path_train='train.csv', path_test='test.csv', path_val='val.csv'):
+        train_test_val_paths = (path_train, path_test, path_val)
+        train = []
+        test = []
+        val = []
+        for path in train_test_val_paths:
+            with open(path) as pt:
+                reader = csv.reader(pt)
+                reader.next()
+                for row in reader:
+                    label = row[4]
+                    k = open('./' + label + '/' + row[0] + '/' + row[1]).read()
+                    for author in MLPAPI.AUTHORS:
+                        if author in row[3]:
+                            break
+                    u = open('./' + label + '/' + author + '/' + row[3]).read()
+
+                    if 'train' in path:
+                        train.append((k, u, label))
+                    elif 'test' in path:
+                        test.append((k, u, label))
+                    elif 'val' in path:
+                        val.append((k, u, label))
+                    else:
+                        raise ValueError
+        train = rand.sample(train, len(train))
+        test = rand.sample(test, len(test))
+        val = rand.sample(val, len(val))
+
+        return train, val, test
+
+
+class MLPVLoader:
+
+    def __init__(self):
+        self.train, self.val, self.test = MLPAPI.load_dataset()
+
+
+    def get_mlpv(self):
+        return self.train, self.val, self.test
+
+    def slice(self, data, npieces=5):
+        return [data[i:i + npieces] for i in range(0, len(data), npieces)]
+
+    def get_slices(self):
+        self.slice(self.train), self.slice(self.val), self.slice(self.test)
 
 def main():
+    loader=MLPVLoader()
+    tr, v, tst = loader.get_slices()
     #MLP400AV_API.create_dataset()
-    X, y = MLP400AV_API.load_dataset()
+    #tr, v, tst = MLPAPI.load_dataset()
+    print('done')
 
 if __name__=="__main__":
     print('hello')
