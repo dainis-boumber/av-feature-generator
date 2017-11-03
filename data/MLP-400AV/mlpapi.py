@@ -1,8 +1,7 @@
-import os
 import csv
 import random as rand
 import sklearn.model_selection as select
-import spacy
+import numpy as np
 
 # API container, static methods only
 class MLPAPI:
@@ -162,7 +161,7 @@ class MLPAPI:
         for path in train_test_val_paths:
             with open(path) as pt:
                 reader = csv.reader(pt)
-                reader.next()
+                next(reader)
                 for row in reader:
                     label = row[4]
                     k = open('./' + label + '/' + row[0] + '/' + row[1]).read()
@@ -195,15 +194,15 @@ class MLPVLoader:
     def get_mlpv(self):
         return self.train, self.val, self.test
 
-    def slice(self, data, npieces=5):
-        return [data[i:i + npieces] for i in range(0, len(data), npieces)]
+    def slice(slice, l, n):
+        return np.array_split(l, n)
 
-    def get_slices(self):
-        self.slice(self.train), self.slice(self.val), self.slice(self.test)
+    def get_slices(self, n):
+        return self.slice(self.train, n), self.slice(self.val, n), self.slice(self.test, n)
 
 def main():
     loader=MLPVLoader()
-    tr, v, tst = loader.get_slices()
+    tr, v, tst = loader.get_slices(5)
     #MLP400AV_API.create_dataset()
     #tr, v, tst = MLPAPI.load_dataset()
     print('done')
