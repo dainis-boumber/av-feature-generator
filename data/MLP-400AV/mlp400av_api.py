@@ -131,9 +131,13 @@ class MLP400AV_API:
 
         return yes_no_pairs
 
-def main():
-    MLP400AV_API.create_dataset()
+    @staticmethod
+    def load_dataset():
+        pass
 
+def main():
+    #MLP400AV_API.create_dataset()
+    X, y = MLP400AV_API.load_dataset()
 
 if __name__=="__main__":
     print('hello')
