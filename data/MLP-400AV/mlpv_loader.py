@@ -6,9 +6,3 @@ class MLPVLoader:
         pass
 
 
-
-def main():
-    pass
-
-if __name__ == "main":
-    main()

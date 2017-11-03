@@ -23,6 +23,7 @@ class MLP400AV_API:
                 idx.extend((range(0, 20)))
                 idx.remove(i)
                 author_ix = rand.choice(idx)
+                unknown = None
                 for j in range(len(bins[author_ix][0])):
                     unknown = rand.choice(bins[author_ix][0])
                     if b[1] not in paper_authors[unknown]:
@@ -33,11 +34,11 @@ class MLP400AV_API:
                 bins[author_ix][0].remove(unknown)
             else:
                 raise ValueError('label is always either YES or NO')
-            return yes_no, bins
+        return yes_no, bins
 
     @staticmethod
     def write_pairs(filename, label, yes_no, bins, params='w'):
-        if label is not 'YES' or label is not 'NO':
+        if label is not 'YES' and label is not 'NO':
             raise ValueError('Label must always be YES or NO')
 
         pairs = []
@@ -63,12 +64,14 @@ class MLP400AV_API:
             lines = []
 
             for line in csv_reader:
+                paper = line[0]
+                authorship = line[1:]
                 tmp = []
-                for i, value in enumerate(line[1:]):
-                    if value == 1 and authors[i] in line[0]:
+                for i, value in enumerate(authorship):
+                    if value == '1':
                         tmp.append(authors[i])
-                paper_authors.update({line[0], tmp})
-                lines.append(line[0])
+                paper_authors[paper] =  tmp
+                lines.append(paper)
 
         assert (len(authors) == 20)
         assert (len(paper_authors) == 400)
@@ -92,7 +95,7 @@ class MLP400AV_API:
                     break
 
             train, test = select.train_test_split(selection, test_size=ntst)
-            train, val = select.train_test_split(tr_bins, train_size=ntr)
+            train, val = select.train_test_split(train, train_size=ntr)
             train = rand.sample(train, 14)#shuffle papers
             test = rand.sample(test, 4)
             val = rand.sample(val, 2)
@@ -114,19 +117,16 @@ class MLP400AV_API:
         yes_no_pairs = []
 
         for i ,label in enumerate(labels):
-            if i == 0:
-                p = 'w'
-            else:
-                p = 'w+'
+            p = 'w'
 
             authors, paper_authors, lines = MLP400AV_API.read_input(label=label)
             tr_bins, tst_bins, val_bins = MLP400AV_API.tr_tst_val_split(authors, paper_authors, lines)
             yes_no, bins = MLP400AV_API.make_pairs(bins=tr_bins, label=label, paper_authors=paper_authors)
-            tr_pairs = MLP400AV_API.write_pairs(filename='train.csv', label=label, yes_no=yes_no, bins=bins, params=p)
+            tr_pairs = MLP400AV_API.write_pairs(filename=label + 'train.csv', label=label, yes_no=yes_no, bins=bins, params=p)
             yes_no, bins = MLP400AV_API.make_pairs(bins=tst_bins, label=label, paper_authors=paper_authors)
-            test_pairs = MLP400AV_API.write_pairs(filename='test.csv', label=label, yes_no=yes_no, bins=bins, params=p)
+            test_pairs = MLP400AV_API.write_pairs(filename=label + 'test.csv', label=label, yes_no=yes_no, bins=bins, params=p)
             yes_no, bins = MLP400AV_API.make_pairs(bins=val_bins, label=label, paper_authors=paper_authors)
-            val_pairs = MLP400AV_API.write_pairs(filename='val.csv', label=label, yes_no=yes_no, bins=bins, params=p)
+            val_pairs = MLP400AV_API.write_pairs(filename=label + 'val.csv', label=label, yes_no=yes_no, bins=bins, params=p)
             yes_no_pairs.append((tr_pairs, test_pairs, val_pairs))
 
         return yes_no_pairs
@@ -135,5 +135,6 @@ def main():
     MLP400AV_API.create_dataset()
 
 
-if __name__=="main":
+if __name__=="__main__":
+    print('hello')
     main()
