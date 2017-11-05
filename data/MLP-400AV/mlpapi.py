@@ -215,6 +215,7 @@ class MLPAPI:
     def create_dataset(scheme):
         labels = ['YES', 'NO']
         pairs = [[], [], []]
+        all_pairs = []
         fnames = (scheme + 'train.csv', scheme + 'val.csv', scheme + 'test.csv')
 
         for i, label in enumerate(labels):
@@ -226,12 +227,16 @@ class MLPAPI:
                     yes_no, bins_sans_unknown = MLPAPI.make_unkown_papers(author_bins=bins, label=label,
                                                                     paper_authors=paper_authors)
                     pairs[j].extend(MLPAPI.make_pairs(label, yes_no=yes_no, bins=bins_sans_unknown))
+                    shuffle(pairs[j])
             elif scheme == 'B':  # test train and val MAY intersect
                 yes_no, bins_sans_unknown = MLPAPI.make_unkown_papers(author_bins=author_bins, label=label,
                                                                 paper_authors=paper_authors)
-                tr_bins, tst_bins, val_bins = MLPAPI.tr_tst_val_split(bins_sans_unknown)
-                for j, bins in enumerate((tr_bins, val_bins, tst_bins)):
-                    pairs[j].extend(MLPAPI.make_pairs(label, yes_no=yes_no, bins=bins))
+                all_pairs.extend(MLPAPI.make_pairs(label, yes_no=yes_no, bins=bins_sans_unknown))
+                if i == len(labels) - 1:
+                    shuffle(all_pairs)
+                    train, test = select.train_test_split(all_pairs, train_size=0.8)
+                    train, val = select.train_test_split(train, test_size=int(len(test)/2))
+                    pairs = [train, val, test]
             else:
                 raise ValueError
 
@@ -286,7 +291,7 @@ class MLPVLoader:
 
 
 def main():
-    MLPAPI.create_dataset(scheme='A')
+    MLPAPI.create_dataset(scheme='B')
     #loader=MLPVLoader()
     #tr, v, tst = loader.get_slices(5)
     print('done')
