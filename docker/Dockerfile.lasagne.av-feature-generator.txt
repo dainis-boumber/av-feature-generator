@@ -1,10 +1,15 @@
 # Start with CUDA Theano base image
 FROM kaixhin/cuda-theano:8.0
 
-# Install bleeding-edge Lasagne
+RUN apt-get install -y sudo pkg-config apt-utils pkg-config --no-install-recommends libpng-dev
+RUN apt-get upgrade -y
+RUN apt-get install -y vim wget git unzip
+RUN apt-get install -y libfreetype6 libfreetype6-dev pkg-config
+RUN pip install freetype-py
+RUN apt-get build-dep -y python-matplotlib
+RUN pip install numpy scikit-learn scikit-image matplotlib
 RUN pip install --upgrade https://github.com/Lasagne/Lasagne/archive/master.zip
-# SSH support
-RUN echo "export PATH=$PATH" >> /etc/profile && \
+UN echo "export PATH=$PATH" >> /etc/profile && \
     echo "ldconfig" >> /etc/profile
 RUN apt-get update && apt-get install -y openssh-server && apt-get install sudo
 RUN mkdir /var/run/sshd
@@ -18,25 +23,18 @@ RUN sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
 EXPOSE 22
 
 RUN service ssh restart
+RUN apt-get install -y sudo --no-install-recommends apt-utils
+WORKDIR /root
 
-RUN apt-get install -y sudo pkg-config apt-utils pkg-config --no-install-recommends libpng-dev
-RUN apt-get upgrade -y
-RUN apt-get install -y vim wget git unzip
-RUN apt-get install -y libfreetype6 libfreetype6-dev pkg-config
-RUN pip install freetype-py
-RUN apt-get build-dep -y python-matplotlib
-RUN pip install numpy scikit-learn scikit-image matplotlib
 # this is where we will mount a directory to get inputs/outputs without having to ssh every time
 RUN mkdir /root/inputs
 RUN mkdir /root/outputs
-# this is where our projects go
-# notebook should run on the background as well as sshd
-COPY start.sh /
-RUN chmod +x /start.sh
-# set default directory we enter on logon to home directory
 
-RUN pip install --upgrade https://github.com/Lasagne/Lasagne/archive/master.zip
+RUN pip3 install numpy scikit-learn
+RUN apt-get install -y vim tmux && apt-get update
+RUN echo "if [[ -z \"$TMUX\" ]] && [ \"$SSH_CONNECTION\" != \"\" ]; then" >> ~/.bashrc \
+    echo "   tmux attach-session -t $USER || tmux new-session -s $USER \; split-window -v \; attach" >> ~/.bashrc \
+    echo "fi" >> ~/.bashrc
+
 WORKDIR /root
-RUN ln -s /start.sh /root/start_notebook.sh
 CMD ["/usr/sbin/sshd", "-D"]
-

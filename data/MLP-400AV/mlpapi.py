@@ -2,6 +2,7 @@ import csv
 import random as rand
 import sklearn.model_selection as select
 import numpy as np
+import copy
 
 # API container, static methods only
 class MLPAPI:
@@ -29,54 +30,15 @@ class MLPAPI:
         'robert_tibshirani'
         )
 
+    author_ix = 0
+    papers_ix = 1
+    pa_table_ix = 2
 
     def __init__(self):
         pass
 
     @staticmethod
-    def make_pairs(bins, label, paper_authors):
-        yes_no = []
-        for i, b in enumerate(bins):
-            if label == 'YES':
-                unknown = rand.choice(b[0])
-                yes_no.append((unknown, b[1]))
-                b[0].remove(unknown)
-            elif label == 'NO':
-                idx = []
-                idx.extend((range(0, 20)))
-                idx.remove(i)
-                author_ix = rand.choice(idx)
-                unknown = None
-                for j in range(len(bins[author_ix][0])):
-                    unknown = rand.choice(bins[author_ix][0])
-                    if b[1] not in paper_authors[unknown]:
-                        break
-                    if j == len(bins[author_ix][0]) - 1:
-                        raise RuntimeError('all papers in co authoship')
-                yes_no.append((unknown, b[1]))
-                bins[author_ix][0].remove(unknown)
-            else:
-                raise ValueError('label is always either YES or NO')
-        return yes_no, bins
-
-    @staticmethod
-    def write_pairs(filename, label, yes_no, bins):
-        if label is not 'YES' and label is not 'NO':
-            raise ValueError('Label must always be YES or NO')
-
-        pairs = []
-        with open(filename, 'w') as of:
-            for unknown, author in yes_no:
-                for b in bins:
-                    for paper in b[0]:
-                        if b[1] == author:
-                            assert (unknown != paper)
-                            pairs.append((author, paper, unknown, label))
-                            of.write(author + ',' + paper + ',unknown,' + unknown + ',' + label + '\n')
-            return pairs
-
-    @staticmethod
-    def read_input(label, infile='labels.csv'):
+    def read_input(infile='labels.csv'):
         with open(infile) as fin:
             paper_authors = {}
             #for root, dirs, files in os.walk('./' + label):
@@ -84,7 +46,7 @@ class MLPAPI:
             #        authors.append(str(root.lstrip('./')))
             csv_reader = csv.reader(fin, delimiter=',')
             authors = csv_reader.next()[1:]#skip header
-            lines = []
+            papers = []
 
             for line in csv_reader:
                 paper = line[0]
@@ -94,63 +56,129 @@ class MLPAPI:
                     if value == '1':
                         tmp.append(authors[i])
                 paper_authors[paper] =  tmp
-                lines.append(paper)
+                papers.append(paper)
 
-        assert (len(authors) == 20)
-        assert (len(paper_authors) == 400)
-        assert (len(lines) == 400)
-        return authors, paper_authors, lines
+            assert (len(authors) == 20)
+            assert (len(papers) == 400)
+            assert (len(paper_authors) == 400)
+            for paper in papers:
+                assert len(paper_authors[paper]) >=1, paper
+
+
+            return authors, papers, paper_authors
 
     @staticmethod
-    def tr_tst_val_split(authors, paper_authors, lines, ntr=14, ntst=4):
+    def split_by_author(authors, papers, paper_authors):
+
         i = 0
-        j = len(authors)
+        j = len(papers) / len(authors)
+        bins = []
+
+        while j <= len(papers):
+            selection = papers[i:j]
+            assert (len(selection) == len(papers) / len(authors))
+            for s in selection:
+                assert s is not None, selection
+
+            for a in authors:
+                assert a is not None, authors
+                if a in selection[MLPAPI.papers_ix]:
+                    author = a
+                    break
+            for i, s in enumerate(selection):
+                assert author in s, author
+
+            shuffled_papers = rand.sample(selection, len(selection))
+            bins.append((author, shuffled_papers, paper_authors))
+            i = j
+            j += len(papers) / len(authors)
+
+
+            assert len(bins[-1][MLPAPI.papers_ix]) == len(papers)/len(authors), str(bins[-1][MLPAPI.papers_ix])
+            assert len(bins[-1][MLPAPI.pa_table_ix]) == len(paper_authors), str(bins[-1][MLPAPI.pa_table_ix])
+
+        assert len(bins) == len(authors), len(bins)
+
+        return rand.sample(bins, len(bins))
+
+    @staticmethod
+    def tr_tst_val_split(author_bins, ntr=14, ntst=4, nval=2):
+        assert len(author_bins) == ntr + ntst + nval
         tr_bins = []
         tst_bins = []
         val_bins = []
-
-        while j <= 400:
-            selection = lines[i:j]
-            author = None
-            for a in authors:
-                if a in selection[0]:
-                    author = a
-                    break
-
-            train, test = select.train_test_split(selection, test_size=ntst)
+        for i, bin in enumerate(author_bins):
+            train, test = select.train_test_split(bin[MLPAPI.papers_ix], test_size=ntst)
             train, val = select.train_test_split(train, train_size=ntr)
-            train = rand.sample(train, 14)#shuffle papers
-            test = rand.sample(test, 4)
-            val = rand.sample(val, 2)
-            tr_bins.append((train, author, paper_authors))
-            tst_bins.append((test, author, paper_authors))
-            val_bins.append((val, author, paper_authors))
-            i += len(selection)
-            j += len(selection)
-        # shuffle authors
-        tr_bins = rand.sample(tr_bins, len(tr_bins))
-        tst_bins = rand.sample(tst_bins, len(tst_bins))
-        val_bins = rand.sample(val_bins, len(val_bins))
-
+            tr_bins.append((bin[MLPAPI.author_ix], train, bin[MLPAPI.papers_ix]))
+            tst_bins.append((bin[MLPAPI.author_ix], test, bin[MLPAPI.papers_ix]))
+            val_bins.append((bin[MLPAPI.author_ix], val, bin[MLPAPI.papers_ix]))
+            assert len(tr_bins[i][MLPAPI.papers_ix]) == ntr, str(len(tr_bins[i][MLPAPI.papers_ix]))
+            assert len(tst_bins[i][MLPAPI.papers_ix]) == ntst, str(len(tst_bins[i][MLPAPI.papers_ix]))
+            assert len(val_bins[i][MLPAPI.papers_ix]) == nval, str(val_bins[i][MLPAPI.papers_ix])
+        assert len(tr_bins) == len(author_bins)
+        assert len(tst_bins) == len(author_bins)
+        assert len(val_bins) == len(author_bins)
         return tr_bins, tst_bins, val_bins
 
     @staticmethod
-    def create_dataset():
+    def make_pairs(label, yes_no, bins):
+        if label is not 'YES' and label is not 'NO':
+            raise ValueError('Label must always be YES or NO')
+
+        X = []
+        y = []
+        pairs = []
+        for unknown, author in yes_no:
+            for b in bins:
+                for paper in b[MLPAPI.papers_ix]:
+                    if b[MLPAPI.author_ix] == author:
+                        assert unknown != paper
+                        X.append([author, paper, unknown])
+                        y.append(label)
+                        pairs.append((author, (paper, unknown), label))
+        return pairs
+
+    @staticmethod
+    def write_pairs(filename, pairs):
+        with open(filename, 'w') as of:
+            of.write('Author,Known_paper,Unknown_paper,Is_same_author\n')
+            for pair in pairs:
+                author = pair[0]
+                paper = pair[1][0]
+                unknown = pair[1][1]
+                label = pair[2]
+                of.write(author + ',' + paper + ',unknown,' + unknown + ',' + label + '\n')
+
+    @staticmethod
+    def write_dataset(filenames, pair_sets):
+        for i, filename in enumerate(filenames):
+            MLPAPI.write_pairs(filename, pair_sets[i])
+
+    @staticmethod
+    def create_dataset(scheme):
         labels = ['YES', 'NO']
-        yes_no_pairs = []
+        pairs = [[],[],[]]
+        fnames = (scheme + 'train.csv', scheme + 'val.csv', scheme + 'test.csv')
 
         for i ,label in enumerate(labels):
-            authors, paper_authors, lines = MLPAPI.read_input(label=label)
-            tr_bins, tst_bins, val_bins = MLPAPI.tr_tst_val_split(authors, paper_authors, lines)
-            yes_no, bins = MLPAPI.make_pairs(bins=tr_bins, label=label, paper_authors=paper_authors)
-            tr_pairs = MLPAPI.write_pairs(filename=label + 'train.csv', label=label, yes_no=yes_no, bins=bins)
-            yes_no, bins = MLPAPI.make_pairs(bins=tst_bins, label=label, paper_authors=paper_authors)
-            test_pairs = MLPAPI.write_pairs(filename=label + 'test.csv', label=label, yes_no=yes_no, bins=bins)
-            yes_no, bins = MLPAPI.make_pairs(bins=val_bins, label=label, paper_authors=paper_authors)
-            val_pairs = MLPAPI.write_pairs(filename=label + 'val.csv', label=label, yes_no=yes_no, bins=bins)
-            yes_no_pairs.append((tr_pairs, test_pairs, val_pairs))
+            authors, papers, paper_authors = MLPAPI.read_input()
+            author_bins = MLPAPI.split_by_author(authors, papers, paper_authors)
+            if scheme == 'A':#test, train and val do NOT intersect
+                tr_author_bins, tst_author_bins, val_author_bins = MLPAPI.tr_tst_val_split(author_bins)
+                for j, bins in enumerate((tr_author_bins, val_author_bins, tst_author_bins)):
+                    yes_no, author_bins = MLPAPI.make_unkown_papers(author_bins=bins,label=label,paper_authors=paper_authors)
+                    pairs[j].extend(MLPAPI.make_pairs(label,yes_no=yes_no,bins=author_bins))
+            elif scheme == 'B':#test train and val MAY intersect
+                yes_no, author_bins = MLPAPI.make_unkown_papers(author_bins=author_bins, label=label, paper_authors=paper_authors)
+                tr_bins, tst_bins, val_bins = MLPAPI.tr_tst_val_split(author_bins)
+                for j, bins in enumerate((tr_bins, val_bins, tst_bins)):
+                    pairs[j].extend(MLPAPI.make_pairs(label, yes_no=yes_no, bins=bins))
+            else:
+                raise ValueError
 
-        return yes_no_pairs
+        MLPAPI.write_dataset(fnames, pairs)
+        return pairs
 
     @staticmethod
     def load_dataset(path_train='train.csv', path_test='test.csv', path_val='val.csv'):
@@ -184,6 +212,54 @@ class MLPAPI:
 
         return train, val, test
 
+    @staticmethod
+    def make_unkown_papers(author_bins, label, paper_authors):
+        bins = author_bins
+
+        yes_no = []
+        author_idx = {}
+        for i, author in enumerate(MLPAPI.AUTHORS):
+            for b in bins:
+                if author == b[MLPAPI.author_ix]:
+                    author_idx.update({author : i})
+
+        for i, b in enumerate(bins):
+            current_author = b[MLPAPI.author_ix]
+            if label == 'YES':
+                unknown = rand.choice(b[MLPAPI.papers_ix])
+                assert unknown is not None, b[MLPAPI.author_ix]
+                yes_no.append((unknown, current_author))
+                b[MLPAPI.papers_ix].remove(unknown)
+            elif label == 'NO':
+                possible_negatives = [author for author in MLPAPI.AUTHORS if author != current_author]
+                possible_negatives = rand.sample(possible_negatives, len(possible_negatives))
+                neg_found = False
+
+                while not neg_found:
+                    negative_author = rand.choice(possible_negatives)
+                    inegative_author = author_idx[negative_author]
+                    unknown = None
+
+                    for j in range(len(bins[inegative_author][MLPAPI.papers_ix])):
+                        unknown = rand.choice(bins[inegative_author][MLPAPI.papers_ix])
+                        co_authors = paper_authors[unknown]
+                        if current_author not in co_authors:
+                            neg_found = True
+                            break
+                        if j == len(bins[inegative_author][MLPAPI.papers_ix]) - 1:
+                            possible_negatives.remove(negative_author)
+                            if len(possible_negatives) == 0:
+                                raise RuntimeError('all papers sampled in co authoship. Just bad luck, try running again')
+                yes_no.append((unknown, current_author))
+                try:
+                    bins[inegative_author][MLPAPI.papers_ix].remove(unknown)
+                except ValueError:
+                    print('ValueError, unkown paper value is' + unknown)
+                    print(bins[inegative_author][MLPAPI.papers_ix])
+            else:
+                raise ValueError('label is always either YES or NO')
+        return yes_no, bins
+
 
 class MLPVLoader:
 
@@ -200,13 +276,12 @@ class MLPVLoader:
     def get_slices(self, n):
         return self.slice(self.train, n), self.slice(self.val, n), self.slice(self.test, n)
 
+
 def main():
-    loader=MLPVLoader()
-    tr, v, tst = loader.get_slices(5)
-    #MLP400AV_API.create_dataset()
-    #tr, v, tst = MLPAPI.load_dataset()
+    MLPAPI.create_dataset(scheme='A')
+    #loader=MLPVLoader()
+    #tr, v, tst = loader.get_slices(5)
     print('done')
 
 if __name__=="__main__":
-    print('hello')
     main()

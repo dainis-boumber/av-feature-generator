@@ -1,7 +1,7 @@
 # Remote# Remote debug enabled container. IDE and code on host/network, environment
 # isolated in Docker. Tested with PyCharm 17.2 Professional Edition.
 FROM tensorflow/tensorflow:1.4.0-rc1-devel-gpu-py3
-# SSH support
+
 RUN echo "export PATH=$PATH" >> /etc/profile && \
     echo "ldconfig" >> /etc/profile
 RUN apt-get update && apt-get install -y openssh-server && apt-get install sudo
@@ -16,23 +16,19 @@ RUN sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
 EXPOSE 22
 
 RUN service ssh restart
-
 RUN apt-get install -y sudo --no-install-recommends apt-utils
-RUN apt-get upgrade -y
-RUN apt-get install -y vim wget git unzip
-RUN pip3 install -U numpy scikit-learn spacy scikit-image
-RUN python3 -m spacy download en
+WORKDIR /root
+
 # this is where we will mount a directory to get inputs/outputs without having to ssh every time
 RUN mkdir /root/inputs
 RUN mkdir /root/outputs
-# this is where our projects go
-# notebook should run on the background as well as sshd
-RUN rm /run_jupyter.sh
-COPY start.sh /
-RUN chmod +x /start.sh
-# set default directory we enter on logon to home directory
 
-RUN pip install --upgrade https://github.com/Lasagne/Lasagne/archive/master.zip
+RUN pip3 install numpy scikit-learn
+RUN apt-get install -y vim tmux && apt-get update
+RUN echo "if [[ -z \"$TMUX\" ]] && [ \"$SSH_CONNECTION\" != \"\" ]; then" >> ~/.bashrc \
+    echo "   tmux attach-session -t $USER || tmux new-session -s $USER \; split-window -v \; attach" >> ~/.bashrc \
+    echo "fi" >> ~/.bashrc
+
 WORKDIR /root
-RUN ln -s /start.sh /root/start_notebook.sh
 CMD ["/usr/sbin/sshd", "-D"]
+
