@@ -8,7 +8,8 @@ Format: csv
 
 Author, Known_paper, Unknown_paper, Is_same_author
 
-The data is split under to schemas: A and B.
+The data is split under to schemas: A and B. For both schemas, unknown samples is not present 
+amongst the known ones, unlike in PAN (this can be changed easily)
 
 Schema A: disjoint sets (Train, Val and Test do NOT intersect)
 
