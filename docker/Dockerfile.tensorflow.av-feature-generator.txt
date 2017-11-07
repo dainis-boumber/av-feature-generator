@@ -7,7 +7,7 @@ RUN echo "export PATH=$PATH" >> /etc/profile && \
 RUN apt-get update && apt-get install -y openssh-server && apt-get install sudo
 RUN mkdir /var/run/sshd
 # set root password to root - change this to whatver
-RUN echo 'root:Db340934' | chpasswd
+RUN echo 'root:root' | chpasswd
 # configure sshd to let root login
 RUN sed -ri 's/^PermitRootLogin\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config
 RUN sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
