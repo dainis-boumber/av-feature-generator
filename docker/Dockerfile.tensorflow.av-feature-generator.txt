@@ -16,19 +16,17 @@ RUN sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
 EXPOSE 22
 
 RUN service ssh restart
-RUN apt-get install -y sudo --no-install-recommends apt-utils
+RUN apt-get install -y sudo --no-install-recommends apt-utils python3-pip python3-dev
 WORKDIR /root
 
 # this is where we will mount a directory to get inputs/outputs without having to ssh every time
 RUN mkdir /root/inputs
 RUN mkdir /root/outputs
 
-RUN pip3 install numpy scikit-learn
+RUN pip3 install numpy
 RUN apt-get install -y vim tmux && apt-get update
-RUN echo "if [[ -z \"$TMUX\" ]] && [ \"$SSH_CONNECTION\" != \"\" ]; then" >> ~/.bashrc \
-    echo "   tmux attach-session -t $USER || tmux new-session -s $USER \; split-window -v \; attach" >> ~/.bashrc \
-    echo "fi" >> ~/.bashrc
 
 WORKDIR /root
 CMD ["/usr/sbin/sshd", "-D"]
+
 
