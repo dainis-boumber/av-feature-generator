@@ -1,11 +1,11 @@
 FROM kaixhin/cuda-lasagne:8.0
 
-RUN apt-get install -y sudo pkg-config apt-utils pkg-config --no-install-recommends libpng-dev
+RUN apt-get install -y sudo pkg-config apt-utils sudo pkg-config --no-install-recommends libpng-dev
 RUN apt-get install -y vim wget git unzip
 RUN apt-get install -y libfreetype6 libfreetype6-dev pkg-config
 RUN pip install freetype-py & apt-get update
 RUN apt-get build-dep -y python-matplotlib
-RUN pip install numpy scikit-learn scikit-image matplotlib
+RUN pip install matplotlib
 #ssh
 RUN apt-get update && apt-get install -y openssh-server && apt-get install sudo
 RUN mkdir /var/run/sshd
@@ -19,13 +19,12 @@ RUN sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
 EXPOSE 22
 
 RUN service ssh restart
-RUN apt-get install -y sudo --no-install-recommends apt-utils
 WORKDIR /root
 
 # this is where we will mount a directory to get inputs/outputs without having to ssh every time
 RUN mkdir /root/inputs
 RUN mkdir /root/outputs
-RUN apt-get install -y vim tmux
+RUN apt-get install -y tmux
 
 WORKDIR /root
 CMD ["/usr/sbin/sshd", "-D"]
