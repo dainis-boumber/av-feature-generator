@@ -56,9 +56,9 @@ A balanced dataset, which is formed as follows:
   The results are saved in Btest.csv, Bval.csv and Btrain.csv
    
 
-`Atest.csv` test , 20% of the data
-`Aval.csv` - validation, 10% of the data
-`Atrain.csv` - traininig set, 70% of the data.
+`test.csv` test , 20% of the data
+`val.csv` - validation, 10% of the data
+`train.csv` - traininig set, 70% of the data.
 
 The dataset is produced using MLPA-400's
 `Labels.csv` which contains the ground truths for the paper authorship in the following format: <filename>,<author_1>,<author2>...<author_20>\n
