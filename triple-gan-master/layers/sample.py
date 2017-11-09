@@ -2,7 +2,8 @@ import lasagne
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 import theano.tensor as T
 import theano
-
+import lasagne.layers
+from parmesan.parmesan.layers.sample import *
 
 class GaussianSampleLayer(lasagne.layers.MergeLayer):
     """
