@@ -2,7 +2,7 @@ import csv
 import random as rand
 import sklearn.model_selection as select
 import numpy as np
-import copy
+import textacy
 from sklearn.utils import shuffle
 
 # API container, static methods only
@@ -215,11 +215,11 @@ class MLPAPI:
         return yes_no, bins
 
     @staticmethod
-    def create_dataset(scheme):
+    def create_dataset(dir, scheme):
         labels = ['YES', 'NO']
         pairs = [[], [], []]
         all_pairs = []
-        fnames = (scheme + 'train.csv', scheme + 'val.csv', scheme + 'test.csv')
+        fnames = (dir + '/' + scheme + 'train.csv', dir + '/' + scheme + 'val.csv', dir + '/' + scheme + 'test.csv')
 
         for i, label in enumerate(labels):
             authors, papers, paper_authors = MLPAPI.read_input()
@@ -247,8 +247,9 @@ class MLPAPI:
         return pairs
 
     @staticmethod
-    def load_dataset(path_train='train.csv', path_test='test.csv', path_val='val.csv'):
-        train_test_val_paths = (path_train, path_test, path_val)
+    def load_dataset(scheme='A2', dir = '.', path_train='train.csv', path_test='test.csv', path_val='val.csv'):
+        train_test_val_paths = (dir + '/' + scheme + path_train, dir + '/' + scheme + path_test,
+                                dir + '/' + scheme + path_val)
         train = []
         test = []
         val = []
@@ -258,11 +259,16 @@ class MLPAPI:
                 next(reader)
                 for row in reader:
                     label = row[4]
-                    k = open('./' + label + '/' + row[0] + '/' + row[1]).read()
+                    try:
+                        k = open(dir + '/' + label + '/' + row[0] + '/' + row[1], 'r').read()
+                    except UnicodeDecodeError:
+                        print(dir + '/' + label + '/' + row[0] + '/' + row[1], 'r')
+
+                    author = None
                     for author in MLPAPI.AUTHORS:
                         if author in row[3]:
                             break
-                    u = open('./' + label + '/' + author + '/' + row[3]).read()
+                    u = open(dir + '/' + label + '/' + author + '/' + row[3], 'r').read()
 
                     if 'train' in path:
                         train.append((k, u, label))
@@ -277,11 +283,10 @@ class MLPAPI:
         val = shuffle(val)
         return train, val, test
 
-
 class MLPVLoader:
 
-    def __init__(self):
-        self.train, self.val, self.test = MLPAPI.load_dataset()
+    def __init__(self, scheme='A2', dir='.'):
+        self.train, self.val, self.test = MLPAPI.load_dataset(scheme, dir)
 
     def get_mlpv(self):
         return self.train, self.val, self.test
