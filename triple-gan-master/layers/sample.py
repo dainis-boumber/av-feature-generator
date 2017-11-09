@@ -29,7 +29,7 @@ class GaussianSampleLayer(lasagne.layers.MergeLayer):
     def __init__(self, mean, log_var,
                  seed=None,
                  **kwargs):
-        super(SimpleSampleLayer, self).__init__([mean, log_var], **kwargs)
+        super(GaussianSampleLayer, self).__init__([mean, log_var], **kwargs)
 
         if seed is None:
             seed = lasagne.random.get_rng().randint(1, 2147462579)
@@ -66,7 +66,7 @@ class BernoulliSampleLayer(lasagne.layers.Layer):
     def __init__(self, mean,
                  seed=None,
                  **kwargs):
-        super(SimpleBernoulliSampleLayer, self).__init__(mean, **kwargs)
+        super(BernoulliSampleLayer, self).__init__(mean, **kwargs)
 
         if seed is None:
             seed = lasagne.random.get_rng().randint(1, 2147462579)

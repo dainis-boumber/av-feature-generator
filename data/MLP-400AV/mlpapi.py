@@ -149,14 +149,15 @@ class MLPAPI:
             for b in bins:
                 for paper in b[MLPAPI.papers_ix]:
                     if b[MLPAPI.author_ix] == author:
-                        assert unknown != paper
+                        if label is 'NO':
+                            assert unknown != paper
                         X.append([author, paper, unknown])
                         y.append(label)
                         pairs.append((author, (paper, unknown), label))
         return shuffle(pairs)
 
     @staticmethod
-    def make_unkown_papers(author_bins, label, paper_authors):
+    def make_unkown_papers(author_bins, label, paper_authors, scheme='not A2'):
         bins = author_bins
         npapers_original = len(author_bins[0][MLPAPI.papers_ix])
         yes_no = []
@@ -174,7 +175,8 @@ class MLPAPI:
                 assert unknown is not None, b[MLPAPI.author_ix]
                 yes_no.append((unknown, current_author))
                 nneg += 1
-                b[MLPAPI.papers_ix].remove(unknown)
+                if scheme != 'A2':
+                    b[MLPAPI.papers_ix].remove(unknown)
             elif label == 'NO':
                 possible_negatives = [author for author in MLPAPI.AUTHORS if author != current_author]
                 neg_found = False
@@ -201,7 +203,8 @@ class MLPAPI:
                 assert unknown is not None
                 yes_no.append((unknown, current_author))
                 nneg += 1
-                bins[inegative_author][MLPAPI.papers_ix].remove(unknown)
+                if scheme != 'A2':
+                    bins[inegative_author][MLPAPI.papers_ix].remove(unknown)
             else:
                 raise ValueError('label is always either YES or NO')
 
@@ -221,16 +224,16 @@ class MLPAPI:
         for i, label in enumerate(labels):
             authors, papers, paper_authors = MLPAPI.read_input()
             author_bins = MLPAPI.split_by_author(authors, papers, paper_authors)
-            if scheme == 'A':  # test, train and val do NOT intersect
+            if scheme == 'A' or scheme == 'A2':  # test, train and val do NOT intersect
                 tr_author_bins, tst_author_bins, val_author_bins = MLPAPI.tr_tst_val_split(author_bins)
                 for j, bins in enumerate((tr_author_bins, val_author_bins, tst_author_bins)):
                     yes_no, bins_sans_unknown = MLPAPI.make_unkown_papers(author_bins=bins, label=label,
-                                                                    paper_authors=paper_authors)
+                                                                    paper_authors=paper_authors, scheme=scheme)
                     pairs[j].extend(MLPAPI.make_pairs(label, yes_no=yes_no, bins=bins_sans_unknown))
                     shuffle(pairs[j])
             elif scheme == 'B':  # test train and val MAY intersect
                 yes_no, bins_sans_unknown = MLPAPI.make_unkown_papers(author_bins=author_bins, label=label,
-                                                                paper_authors=paper_authors)
+                                                                paper_authors=paper_authors, scheme=scheme)
                 all_pairs.extend(MLPAPI.make_pairs(label, yes_no=yes_no, bins=bins_sans_unknown))
                 if i == len(labels) - 1:
                     shuffle(all_pairs)
@@ -291,7 +294,7 @@ class MLPVLoader:
 
 
 def main():
-    MLPAPI.create_dataset(scheme='B')
+    MLPAPI.create_dataset(scheme='A2')
     #loader=MLPVLoader()
     #tr, v, tst = loader.get_slices(5)
     print('done')
