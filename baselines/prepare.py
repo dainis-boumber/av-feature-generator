@@ -10,10 +10,17 @@ def load(schema='A2'):
     train = np.asarray(train)
     val = np.asarray(val)
     test = np.asarray(test)
-    data = np.row_stack((train, val, test))
-    X = data[:,0:1].flatten()
-    vcr = CountVectorizer(binary=True)
-    vcr.fit_transform(X)
+    return train, val, test
+
+def transform(train, val, test, vectorizer):
+    vectorizer.fit(np.row_stack((train[:0], train[:1])))
+    tr_known = vectorizer.transform(train[:0])
+    tr_unknown = vectorizer.transform(train[:1])
+    val_known = vectorizer.transform(val[:0])
+    val_unknown = vectorizer.transform(val[:1])
+    test_known = vectorizer.transform(test[:0])
+    test_unknown = vectorizer.transform(test[:1])
+    raise NotImplementedError #TODO
 
 def clean(fname):
     text = tx.fileio.read.read_file(fname)
@@ -24,7 +31,8 @@ def clean(fname):
         f.write(text)
 
 def main():
-    load()
+    train, val, test = load()
+    transform(train, val, test, CountVectorizer(binary=True))
     #clean('../data/MLP-400AV/YES/yee_whye_teh/yee_whye_teh_2_1.txt')
 
 
