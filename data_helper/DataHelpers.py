@@ -2,6 +2,7 @@ import numpy as np
 import re
 import logging
 import pickle
+import itertools
 from sklearn.preprocessing import OneHotEncoder
 import os
 from collections import Counter
@@ -54,22 +55,27 @@ class DataHelper(object):
     def get_vocab_inv(self):
         return self.vocab_inv
 
-    def clean_str(self, string):
-        # string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
+    @staticmethod
+    def clean_str(string):
         string = re.sub("\'", " \' ", string)
         string = re.sub("\"", " \" ", string)
         string = re.sub("-", " - ", string)
 
         string = re.sub(",", " , ", string)
-        string = re.sub("\.", " \. ", string)
-        string = re.sub("!", " ! ", string)
-        string = re.sub("\?", " \? ", string)
 
         string = re.sub(r"[(\[{]", " ( ", string)
         string = re.sub(r"[)\]}]", " ) ", string)
         string = re.sub("\s{2,}", " ", string)
 
         return string.strip().lower()
+
+    @staticmethod
+    def split_sentence(paragraph):
+        paragraph = re.split(pattern="([a-zA-Z\(\)]{2,}[.?!])\s+", string=paragraph)
+        paragraph = [a + b for a, b in itertools.zip_longest(paragraph[::2], paragraph[1::2], fillvalue='')]
+        if paragraph:
+            paragraph = [DataHelper.clean_str(e) for e in paragraph]
+        return paragraph
 
     def load_glove_vector(self):
         glove_lines = list(open(self.glove_path, "r", encoding="utf-8").readlines())
@@ -163,7 +169,7 @@ class DataHelper(object):
         start_index = 0
         docs = []
         for s in sent_count:
-            doc = " <LB> ".join(sent_list[start_index:start_index+s])
+            doc = " <LB> ".join(sent_list[start_index:start_index + s])
             docs.append(doc)
             start_index = start_index + s
         return docs
@@ -199,7 +205,7 @@ class DataHelper(object):
 
     @staticmethod
     def to_onehot_3d(label_vector, total_class):
-        label_vector .astype(np.int)
+        label_vector.astype(np.int)
         y_onehot = np.zeros((len(label_vector), len(label_vector[0]), total_class))
         for instance_index in range(len(label_vector)):
             for aspect_index in range(len(label_vector[0])):

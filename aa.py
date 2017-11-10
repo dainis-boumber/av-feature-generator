@@ -37,11 +37,12 @@ if __name__ == "__main__":
     ################################################
 
     data_name = "PAN14"
-    input_comp_name = ""
+    input_comp_name = "Document"
     middle_comp_name = "DocumentCNN"
     output_comp_name = "LSAA"
 
-    am = ArchiveManager(data_name, middle_comp_name)
+    am = ArchiveManager(data_name=data_name, input_name=input_comp_name, middle_name=middle_comp_name,
+                        output_name=output_comp_name)
     get_exp_logger(am)
     logging.warning('===================================================')
     logging.debug("Loading data...")
@@ -61,7 +62,7 @@ if __name__ == "__main__":
                                                          filter_size_lists=[], num_filters=100,
                                                          dropout=0.0, batch_norm=None, elu=None, fc=[],
                                                          l2_reg=0.0)
-    output_comp = CNNNetworkBuilder.get_output_component(output_name=input_comp_name, middle_comp=middle_comp,
+    output_comp = CNNNetworkBuilder.get_output_component(output_name=output_comp_name, middle_comp=middle_comp,
                                                          data=dater, l2_reg=0.0)
 
     tt = TrainTask(data_helper=dater, am=am,

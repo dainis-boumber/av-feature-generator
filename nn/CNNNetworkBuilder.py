@@ -1,9 +1,24 @@
+from enum import Enum
+import logging
+
 from data_helper.Data import DataObject
 from nn.input_components.OneDocSequence import OneDocSequence
 from nn.input_components.OneSequence import OneSequence
 from nn.middle_components.DocumentCNN import DocumentCNN
 from nn.middle_components.SentenceCNN import SentenceCNN
 from nn.output_components.Output import Output
+
+
+class OutputNNType(Enum):
+    OriginOutput = 0
+    LSAAC1Output = 1
+    LSAAC1_INDIBIAS_Output = 2
+    LSAAC1_MASK_Output = 3
+    LSAAC2Output = 4
+    LSAAR1Output = 5
+    LSAAR1Output_SentFCOverall = 6
+    LSAAR1Output_ShareScore = 7
+    AAAB = 100
 
 
 class CNNNetworkBuilder:
@@ -37,11 +52,7 @@ class CNNNetworkBuilder:
         if input_name == "Sentence":
             input_comp = OneSequence(data)
         elif input_name == "Document":
-            raise NotImplementedError
-            input_comp = OneDocSequence(document_length=document_length, sequence_length=sequence_length,
-                                        num_classes=num_classes,
-                                        vocab_size=vocab_size, embedding_size=embedding_size,
-                                        init_embedding=data.embed_matrix)
+            input_comp = OneDocSequence(data=data)
         else:
             raise NotImplementedError
 
@@ -51,6 +62,12 @@ class CNNNetworkBuilder:
     def get_middle_component(middle_name, input_comp, data,
                              filter_size_lists=None, num_filters=None, dropout=None,
                              batch_norm=None, elu=None, fc=[], l2_reg=0.0):
+        logging.info("setting: %s is %s", "filter_size_lists", filter_size_lists)
+        logging.info("setting: %s is %s", "num_filters", num_filters)
+        logging.info("setting: %s is %s", "batch_norm", batch_norm)
+        logging.info("setting: %s is %s", "elu", elu)
+        logging.info("setting: %s is %s", "MIDDLE_FC", fc)
+
         if middle_name == 'Origin':
             middle_comp = SentenceCNN(previous_component=input_comp, data=data,
                                       filter_size_lists=filter_size_lists, num_filters=num_filters,
@@ -79,20 +96,3 @@ class CNNNetworkBuilder:
 if __name__ == "__main__":
     data = DataObject("test", 100)
     data.vocab = [1, 2, 3]
-    cnn = CNNNetworkBuilder(
-        data=data,
-        document_length=64,
-        sequence_length=1024,
-        num_aspects=6,
-        num_classes=5,
-        embedding_size=300,
-        input_component="TripAdvisorDoc",
-        middle_component="DocumentCNN",
-        output_component="LSAA",
-        filter_size_lists=[[3, 4, 5]],
-        num_filters=100,
-        l2_reg_lambda=0.1,
-        dropout=0.7,
-        batch_normalize=False,
-        elu=False,
-        fc=[])
