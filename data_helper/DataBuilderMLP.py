@@ -1,18 +1,20 @@
 import numpy as np
 import logging
+import textacy
+import nltk
+
+nltk.download('punkt')
+nltk.download('perluniprops')
+nltk.download('nonbreaking_prefixes')
+from nltk.tokenize.moses import MosesTokenizer
 
 from data.MLP400AV.mlpapi import MLPVLoader
-
 from data_helper.DataHelpers import DataHelper
 from data_helper.Data import DataObject
 
 
 class DataBuilderMLP(DataHelper):
-    problem_name = "TripAdvisor"
-
-    sent_num_file = ["aspect_0.count", "test_aspect_0.count"]
-    rating_file = ["aspect_0.rating", "test_aspect_0.rating"]
-    content_file = ["aspect_0.txt", "test_aspect_0.txt"]
+    problem_name = "MLP"
 
     def __init__(self, embed_dim, target_doc_len, target_sent_len, doc_as_sent=False, doc_level=True):
         super(DataBuilderMLP, self).__init__(embed_dim=embed_dim, target_doc_len=target_doc_len,
@@ -26,6 +28,11 @@ class DataBuilderMLP(DataHelper):
         self.dataset_dir = self.data_path + 'hotel_balance_LengthFix1_3000per/'
         self.num_classes = 2  # true or false
 
+        print("loading nltk model")
+        self.sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
+        self.tokenizer = MosesTokenizer()
+        print("nltk model loaded")
+
         self.load_all_data()
 
     def str_2_sent(self, data):
@@ -35,7 +42,7 @@ class DataBuilderMLP(DataHelper):
             line = line.strip()
             if len(line) == 0 and len(paragraph) > 0:  # end of paragraph, split and push
                 paragraph = " ".join(paragraph)
-                content.extend(DataHelper.split_sentence(paragraph))
+                # content.extend(DataHelper.split_sentence(paragraph))
                 paragraph = []
             # if line is too short and is not end of a para we will cut
             elif len(paragraph) == 0 and len(line) <= 3:
@@ -48,30 +55,55 @@ class DataBuilderMLP(DataHelper):
     def str_2_sent_2(self, data):
         content = "".join(data)
         content = content.replace("\n", " ")
+        content = textacy.preprocess_text(content, fix_unicode=True, lowercase=True,
+                                          transliterate=True, no_numbers=False, no_contractions=True, no_accents=True)
         content = DataHelper.split_sentence(content)
+        # print(list(content.sents))
         content = [s for s in content if len(s) > 10]
 
         return content
 
-    def proc_data(self, data):
+    def str_2_sent_2_token(self, data, sent_split=True, word_split=False):
+        content = "".join(data)
+        content = content.replace("\n", " ")
+        content = textacy.preprocess_text(content, fix_unicode=True, lowercase=True,
+                                          transliterate=True, no_numbers=False, no_contractions=True, no_accents=True)
+
+        if sent_split:
+            content_sents = self.sent_detector.tokenize(content)
+            content_sents = [s for s in content_sents if len(s) > 20]
+
+            if word_split:
+                content_tokens = []
+                for sent in content_sents:
+                    content_tokens.append(self.tokenizer.tokenize(sent))
+                return content_tokens
+
+            else:
+                return content_sents
+        else:
+            return content
+
+    def proc_data(self, data, sent_split=True, word_split=False):
+        raw = []
+        label_doc = []
+
         for data_tuple in data:
             k, u, label = data_tuple
-            k = self.str_2_sent_2(k)
-            u = self.str_2_sent_2(u)
-            print(k)
+            k = self.str_2_sent_2_token(k, sent_split=sent_split, word_split=word_split)
+            u = self.str_2_sent_2_token(u, sent_split=sent_split, word_split=word_split)
+            raw.append((k, u))
+            if "YES" == label:
+                label_doc.append(True)
+            else:
+                label_doc.append(False)
 
         if self.doc_as_sent:
-            x_text = DataHelper.concat_to_doc(sent_list=x_text, sent_count=sent_count)
+            raise NotImplementedError
 
-        x = []
-        for train_line_index in range(len(x_text)):
-            tokens = x_text[train_line_index].split()
-            x.append(tokens)
-
-        data = DataObject(self.problem_name, len(y))
-        data.raw = x
-        data.label_doc = y_onehot
-        data.doc_size = sent_count
+        data = DataObject(self.problem_name, len(raw))
+        data.raw = raw
+        data.label_doc = label_doc
 
         return data
 
@@ -85,40 +117,12 @@ class DataBuilderMLP(DataHelper):
         return np.array(x)
 
     def load_all_data(self):
-        data_loader = MLPVLoader()
+        data_loader = MLPVLoader(scheme="A2")
         train, vali, test = data_loader.get_mlpv()
 
-        train_data = self.proc_data(train)
-        self.vocab, self.vocab_inv = self.build_vocab([train_data], self.vocabulary_size)
-        self.embed_matrix = self.build_glove_embedding(self.vocab_inv)
-        train_data = self.build_content_vector(train_data)
-        train_data = self.pad_sentences(train_data)
-
-        if self.doc_level:
-            value = self.to_list_of_sent(train_data.value, train_data.doc_size)
-            train_data.value = value
-            DataHelper.pad_document(train_data, self.target_doc_len)
-
-        self.train_data = train_data
-        self.train_data.embed_matrix = self.embed_matrix
-        self.train_data.vocab = self.vocab
-        self.train_data.vocab_inv = self.vocab_inv
-        self.train_data.label_instance = self.train_data.label_doc
-
-        test_data = self.proc_data(1)
-        test_data = self.build_content_vector(test_data)
-        test_data = self.pad_sentences(test_data)
-
-        if self.doc_level:
-            value = self.to_list_of_sent(test_data.value, test_data.doc_size)
-            test_data.value = value
-            DataHelper.pad_document(test_data, self.target_doc_len)
-
-        self.test_data = test_data
-        self.test_data.embed_matrix = self.embed_matrix
-        self.test_data.vocab = self.vocab
-        self.test_data.vocab_inv = self.vocab_inv
-        self.test_data.label_instance = self.test_data.label_doc
+        train = self.proc_data(train)
+        vali = self.proc_data(vali)
+        test = self.proc_data(test)
 
 
 if __name__ == "__main__":

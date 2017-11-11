@@ -31,17 +31,15 @@ class DataHelper(object):
 
         self.glove_dir = os.path.join(os.path.dirname(__file__), 'glove/')
         self.glove_path = self.glove_dir + "glove.6B." + str(self.embedding_dim) + "d.txt"
-        self.w2v_dir = os.path.join(os.path.dirname(__file__), 'w2v/')
-        self.w2v_path = self.w2v_dir + "GoogleNews-vectors-negative300.bin"
 
         self.data_path = os.path.join(os.path.dirname(__file__), '..', 'data/')
 
-        print("loading embedding.")
-        glove_pickle = os.path.join(os.path.dirname(__file__), 'glove.pickle')
+        # print("loading embedding.")
+        # glove_pickle = os.path.join(os.path.dirname(__file__), 'glove.pickle')
         # [self.glove_words, self.glove_vectors] = self.load_glove_vector()
         # pickle.dump([self.glove_words, self.glove_vectors], open("glove.pickle", "wb"))
-        self.glove_words, self.glove_vectors = pickle.load(open(glove_pickle, "rb"))
-        print("loading embedding completed.")
+        # self.glove_words, self.glove_vectors = pickle.load(open(glove_pickle, "rb"))
+        # print("loading embedding completed.")
 
     def get_train_data(self):
         return self.train_data
@@ -57,17 +55,17 @@ class DataHelper(object):
 
     @staticmethod
     def clean_str(string):
-        string = re.sub("\'", " \' ", string)
-        string = re.sub("\"", " \" ", string)
-        string = re.sub("-", " - ", string)
+        # string = re.sub("\'", " \' ", string)
+        # string = re.sub("\"", " \" ", string)
+        # string = re.sub("-", " - ", string)
 
-        string = re.sub(",", " , ", string)
+        # string = re.sub(",", " , ", string)
 
-        string = re.sub(r"[(\[{]", " ( ", string)
-        string = re.sub(r"[)\]}]", " ) ", string)
-        string = re.sub("\s{2,}", " ", string)
+        # string = re.sub(r"[(\[{]", " ( ", string)
+        # string = re.sub(r"[)\]}]", " ) ", string)
+        # string = re.sub("\s{2,}", " ", string)
 
-        return string.strip().lower()
+        return string.strip()
 
     @staticmethod
     def split_sentence(paragraph):
