@@ -35,34 +35,6 @@ class DataBuilderMLP(DataHelper):
 
         self.load_all_data()
 
-    def str_2_sent(self, data):
-        content = []
-        paragraph = []
-        for line in data:
-            line = line.strip()
-            if len(line) == 0 and len(paragraph) > 0:  # end of paragraph, split and push
-                paragraph = " ".join(paragraph)
-                # content.extend(DataHelper.split_sentence(paragraph))
-                paragraph = []
-            # if line is too short and is not end of a para we will cut
-            elif len(paragraph) == 0 and len(line) <= 3:
-                pass
-            else:  # keep adding to paragraph
-                paragraph.append(line)
-
-        return content
-
-    def str_2_sent_2(self, data):
-        content = "".join(data)
-        content = content.replace("\n", " ")
-        content = textacy.preprocess_text(content, fix_unicode=True, lowercase=True,
-                                          transliterate=True, no_numbers=False, no_contractions=True, no_accents=True)
-        content = DataHelper.split_sentence(content)
-        # print(list(content.sents))
-        content = [s for s in content if len(s) > 10]
-
-        return content
-
     def str_2_sent_2_token(self, data, sent_split=True, word_split=False):
         content = "".join(data)
         content = content.replace("\n", " ")
