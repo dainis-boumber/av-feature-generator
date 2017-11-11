@@ -14,9 +14,7 @@ from lasagne.utils import floatX
 from zca_bn import ZCA
 from zca_bn import mean_only_bn as WN
 
-import gzip, os, cPickle, time, math, argparse, shutil, sys
-
-import numpy as np
+import gzip, os, cPickle, time, math, argparse, shutil
 import theano, lasagne
 import theano.tensor as T
 import lasagne.layers as ll

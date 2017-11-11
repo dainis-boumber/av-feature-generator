@@ -1,14 +1,15 @@
 import os
-import random as rand
-import numpy as np
-import sklearn.model_selection as select
-from sklearn.utils import shuffle
-
 import csv
+import random as rand
+import sklearn.model_selection as select
+import numpy as np
+import textacy
+from sklearn.utils import shuffle
 
 
 # API container, static methods only
 class MLPAPI:
+
     AUTHORS = (
         'geoffrey_hinton',
         'vapnik',
@@ -149,14 +150,15 @@ class MLPAPI:
             for b in bins:
                 for paper in b[MLPAPI.papers_ix]:
                     if b[MLPAPI.author_ix] == author:
-                        assert unknown != paper
+                        if label is 'NO':
+                            assert unknown != paper
                         X.append([author, paper, unknown])
                         y.append(label)
                         pairs.append((author, (paper, unknown), label))
         return shuffle(pairs)
 
     @staticmethod
-    def make_unkown_papers(author_bins, label, paper_authors):
+    def make_unkown_papers(author_bins, label, paper_authors, scheme='not A2'):
         bins = author_bins
         npapers_original = len(author_bins[0][MLPAPI.papers_ix])
         yes_no = []
@@ -174,7 +176,8 @@ class MLPAPI:
                 assert unknown is not None, b[MLPAPI.author_ix]
                 yes_no.append((unknown, current_author))
                 nneg += 1
-                b[MLPAPI.papers_ix].remove(unknown)
+                if scheme != 'A2':
+                    b[MLPAPI.papers_ix].remove(unknown)
             elif label == 'NO':
                 possible_negatives = [author for author in MLPAPI.AUTHORS if author != current_author]
                 neg_found = False
@@ -202,7 +205,8 @@ class MLPAPI:
                 assert unknown is not None
                 yes_no.append((unknown, current_author))
                 nneg += 1
-                bins[inegative_author][MLPAPI.papers_ix].remove(unknown)
+                if scheme != 'A2':
+                    bins[inegative_author][MLPAPI.papers_ix].remove(unknown)
             else:
                 raise ValueError('label is always either YES or NO')
 
@@ -213,25 +217,25 @@ class MLPAPI:
         return yes_no, bins
 
     @staticmethod
-    def create_dataset(scheme):
+    def create_dataset(dir, scheme):
         labels = ['YES', 'NO']
         pairs = [[], [], []]
         all_pairs = []
-        fnames = (scheme + 'train.csv', scheme + 'val.csv', scheme + 'test.csv')
+        fnames = (dir + '/' + scheme + 'train.csv', dir + '/' + scheme + 'val.csv', dir + '/' + scheme + 'test.csv')
 
         for i, label in enumerate(labels):
             authors, papers, paper_authors = MLPAPI.read_input()
             author_bins = MLPAPI.split_by_author(authors, papers, paper_authors)
-            if scheme == 'A':  # test, train and val do NOT intersect
+            if scheme == 'A' or scheme == 'A2':  # test, train and val do NOT intersect
                 tr_author_bins, tst_author_bins, val_author_bins = MLPAPI.tr_tst_val_split(author_bins)
                 for j, bins in enumerate((tr_author_bins, val_author_bins, tst_author_bins)):
                     yes_no, bins_sans_unknown = MLPAPI.make_unkown_papers(author_bins=bins, label=label,
-                                                                          paper_authors=paper_authors)
+                                                                    paper_authors=paper_authors, scheme=scheme)
                     pairs[j].extend(MLPAPI.make_pairs(label, yes_no=yes_no, bins=bins_sans_unknown))
                     shuffle(pairs[j])
             elif scheme == 'B':  # test train and val MAY intersect
                 yes_no, bins_sans_unknown = MLPAPI.make_unkown_papers(author_bins=author_bins, label=label,
-                                                                      paper_authors=paper_authors)
+                                                                paper_authors=paper_authors, scheme=scheme)
                 all_pairs.extend(MLPAPI.make_pairs(label, yes_no=yes_no, bins=bins_sans_unknown))
                 if i == len(labels) - 1:
                     shuffle(all_pairs)
@@ -245,10 +249,10 @@ class MLPAPI:
         return pairs
 
     @staticmethod
-    def load_dataset(file_train='Atrain.csv', file_test='Atest.csv', file_val='Aval.csv'):
-        data_dir = os.path.join(os.path.dirname(__file__), '')
-
-        train_test_val_paths = (data_dir + file_train, data_dir + file_test, data_dir + file_val)
+    def load_dataset(scheme='A2', dir = None, path_train='train.csv', path_test='test.csv', path_val='val.csv'):
+        train_test_val_paths = (dir + '/' + scheme + path_train,
+                                dir + '/' + scheme + path_test,
+                                dir + '/' + scheme + path_val)
         train = []
         test = []
         val = []
@@ -258,11 +262,16 @@ class MLPAPI:
                 next(reader)
                 for row in reader:
                     label = row[4]
-                    k = open(data_dir + '/' + label + '/' + row[0] + '/' + row[1]).readlines()
+                    try:
+                        k = open(dir + '/' + label + '/' + row[0] + '/' + row[1], 'r').readlines()
+                    except UnicodeDecodeError:
+                        print(dir + '/' + label + '/' + row[0] + '/' + row[1], 'r')
+
+                    author = None
                     for author in MLPAPI.AUTHORS:
                         if author in row[3]:
                             break
-                    u = open(data_dir + '/' + label + '/' + author + '/' + row[3]).readlines()
+                    u = open(dir + '/' + label + '/' + author + '/' + row[3], 'r').readlines()
 
                     if 'train' in path:
                         train.append((k, u, label))
@@ -279,8 +288,11 @@ class MLPAPI:
 
 
 class MLPVLoader:
-    def __init__(self):
-        self.train, self.val, self.test = MLPAPI.load_dataset()
+
+    def __init__(self, scheme='A2', dir=None):
+        if dir is None:
+            dir = os.path.join(os.path.dirname(__file__), '')
+        self.train, self.val, self.test = MLPAPI.load_dataset(scheme, dir)
 
     def get_mlpv(self):
         return self.train, self.val, self.test

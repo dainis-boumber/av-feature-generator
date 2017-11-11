@@ -1,0 +1,33 @@
+FROM ermaker/keras
+
+RUN conda install -y \
+    jupyter \
+    matplotlib \
+    seaborn
+
+VOLUME /notebook
+WORKDIR /notebook
+EXPOSE 8888
+#ssh
+RUN apt-get install -y openssh-server && apt-get install sudo
+RUN mkdir /var/run/sshd
+# set root password to root - change this to whatver
+RUN echo 'root:root' | chpasswd
+# configure sshd to let root login
+RUN sed -ri 's/^PermitRootLogin\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
+
+# expose SSH port
+EXPOSE 22
+
+RUN service ssh restart
+WORKDIR /root
+
+# this is where we will mount a directory to get inputs/outputs without having to ssh every time
+RUN mkdir /root/inputs
+RUN mkdir /root/outputs
+RUN apt-get install -y tmux
+
+WORKDIR /root
+CMD ["/usr/sbin/sshd", "-D"]
+CMD jupyter notebook --no-browser --ip=0.0.0.0 --allow-root --NotebookApp.token=

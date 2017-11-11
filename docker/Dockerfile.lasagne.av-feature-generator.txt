@@ -1,13 +1,14 @@
-FROM kaixhin/cuda-lasagne:8.0
+FROM nvidia/cuda:8.0-cudnn5-devel
 
-RUN apt-get install -y sudo pkg-config apt-utils sudo pkg-config --no-install-recommends libpng-dev
-RUN apt-get install -y vim wget git unzip
-RUN apt-get install -y libfreetype6 libfreetype6-dev pkg-config
-RUN pip install freetype-py & apt-get update
-RUN apt-get build-dep -y python-matplotlib
-RUN pip install matplotlib
+ENV THEANO_VERSION 0.9.0
+LABEL com.nvidia.theano.version="0.9.0"
+ENV PYGPU_VERSION 0.6.9
+USER root
+# Install bleeding-edge Lasagne
+RUN pip install --upgrade https://github.com/Lasagne/Lasagne/archive/master.zip
+
 #ssh
-RUN apt-get update && apt-get install -y openssh-server && apt-get install sudo
+RUN apt-get install -y openssh-server && apt-get install sudo
 RUN mkdir /var/run/sshd
 # set root password to root - change this to whatver
 RUN echo 'root:root' | chpasswd
