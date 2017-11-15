@@ -249,10 +249,11 @@ class MLPAPI:
         return pairs
 
     @staticmethod
-    def load_dataset(scheme='A2', dir = None, path_train='train.csv', path_test='test.csv', path_val='val.csv'):
-        train_test_val_paths = (dir + '/' + scheme + path_train,
-                                dir + '/' + scheme + path_test,
-                                dir + '/' + scheme + path_val)
+    def load_dataset(fileformat='lines', scheme='A2', directory = os.path.join(os.path.dirname(__file__), ''),
+                     path_train='train.csv', path_test='test.csv', path_val='val.csv'):
+        train_test_val_paths = (directory + '/' + scheme + path_train,#ex.: /home/user/A2train.csv
+                                directory + '/' + scheme + path_test,
+                                directory + '/' + scheme + path_val)
         train = []
         test = []
         val = []
@@ -262,23 +263,38 @@ class MLPAPI:
                 next(reader)
                 for row in reader:
                     label = row[4]
+                    kauthor = row[0]
                     try:
-                        k = open(dir + '/' + label + '/' + row[0] + '/' + row[1], 'r').readlines()
-                    except UnicodeDecodeError:
-                        print(dir + '/' + label + '/' + row[0] + '/' + row[1], 'r')
+                        with open(directory + '/' + label + '/' + row[0] + '/' + row[1], 'r') as f:
+                            if fileformat == 'lines':
+                                k = f.readlines()
+                            elif fileformat == 'str':
+                                k = f.read()
+                            else:
+                                raise AttributeError
 
-                    author = None
-                    for author in MLPAPI.AUTHORS:
-                        if author in row[3]:
-                            break
-                    u = open(dir + '/' + label + '/' + author + '/' + row[3], 'r').readlines()
+                        author = None
+                        for author in MLPAPI.AUTHORS:
+                            if author in row[3]:
+                                break
+
+                        with open(directory + '/' + label + '/' + author + '/' + row[3], 'r') as f:
+                            if fileformat == 'lines':
+                                u = f.readlines()
+                            elif fileformat == 'str':
+                                u = f.read()
+                            else:
+                                raise AttributeError
+                    except UnicodeDecodeError:
+                        print(directory + '/' + label + '/' + row[0] + '/' + row[1], 'r')
+                        raise UnicodeDecodeError
 
                     if 'train' in path:
-                        train.append((k, u, label))
+                        train.append((kauthor, k, author, u, label))
                     elif 'test' in path:
-                        test.append((k, u, label))
+                        test.append((kauthor, k, author, u, label))
                     elif 'val' in path:
-                        val.append((k, u, label))
+                        val.append((kauthor, k, author, u, label))
                     else:
                         raise ValueError
         train = shuffle(train, random_state=42)
@@ -289,10 +305,10 @@ class MLPAPI:
 
 class MLPVLoader:
 
-    def __init__(self, scheme='A2', dir=None):
-        if dir is None:
-            dir = os.path.join(os.path.dirname(__file__), '')
-        self.train, self.val, self.test = MLPAPI.load_dataset(scheme, dir)
+    def __init__(self, scheme='A2', directory=None):
+        if directory is None:
+            directory = os.path.join(os.path.dirname(__file__), '')
+        self.train, self.val, self.test = MLPAPI.load_dataset(fileformat='str', scheme=scheme, directory=directory)
 
     def get_mlpv(self):
         return self.train, self.val, self.test

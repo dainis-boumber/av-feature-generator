@@ -1,26 +1,23 @@
-import mlpapi as mlpapi
+import data.MLP400AV.mlpapi as mlpapi
 import numpy as np
 from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import CountVectorizer
 import textacy as tx
 
-def load(schema='A2'):
-    loader = mlpapi.MLPVLoader(schema, '../data/MLP-400AV/')
+def load(schema='A2', path_to_ds='../data/MLP400AV/'):
+    loader = mlpapi.MLPVLoader(schema, path_to_ds)
     train, val, test = loader.get_mlpv()
-    train = np.asarray(train)
-    val = np.asarray(val)
-    test = np.asarray(test)
     return train, val, test
 
-def transform(train, val, test, vectorizer):
-    vectorizer.fit(np.row_stack((train[:0], train[:1])))
-    tr_known = vectorizer.transform(train[:0])
-    tr_unknown = vectorizer.transform(train[:1])
-    val_known = vectorizer.transform(val[:0])
-    val_unknown = vectorizer.transform(val[:1])
-    test_known = vectorizer.transform(test[:0])
-    test_unknown = vectorizer.transform(test[:1])
-    raise NotImplementedError #TODO
+def transform(X_train, X_val, X_test, vectorizer):
+    vectorizer.fit(np.row_stack((X_train[:0], X_train[:1])))
+    tr_known = vectorizer.transform(X_train[:0])
+    tr_unknown = vectorizer.transform(X_train[:1])
+    val_known = vectorizer.transform(X_val[:0])
+    val_unknown = vectorizer.transform(X_val[:1])
+    test_known = vectorizer.transform(X_test[:0])
+    test_unknown = vectorizer.transform(X_test[:1])
+    return np.hstack((tr_known, tr_unknown)), np.hstack((val_known, val_unknown)), np.hstack((test_known, test_unknown))
 
 def clean(fname):
     text = tx.fileio.read.read_file(fname)

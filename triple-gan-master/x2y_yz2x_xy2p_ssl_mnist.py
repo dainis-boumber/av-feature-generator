@@ -12,8 +12,7 @@ import lasagne.nonlinearities as ln
 import nn
 from lasagne.init import Normal
 from theano.sandbox.rng_mrg import MRG_RandomStreams
-from parmesan.datasets import load_mnist_realval
-
+from layers.parmesan.parmesan.datasets import load_mnist_realval
 from layers.merge import MLPConcatLayer
 
 from components.shortcuts import convlayer
