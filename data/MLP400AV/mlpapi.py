@@ -3,7 +3,7 @@ import csv
 import random as rand
 import sklearn.model_selection as select
 import numpy as np
-import textacy
+import pandas as pd
 from sklearn.utils import shuffle
 
 
@@ -268,7 +268,7 @@ class MLPAPI:
                         with open(directory + '/' + label + '/' + row[0] + '/' + row[1], 'r') as f:
                             if fileformat == 'lines':
                                 k = f.readlines()
-                            elif fileformat == 'str':
+                            elif fileformat == 'str' or fileformat == 'pandas':
                                 k = f.read()
                             else:
                                 raise AttributeError
@@ -281,7 +281,7 @@ class MLPAPI:
                         with open(directory + '/' + label + '/' + author + '/' + row[3], 'r') as f:
                             if fileformat == 'lines':
                                 u = f.readlines()
-                            elif fileformat == 'str':
+                            elif fileformat == 'str' or fileformat == 'pandas':
                                 u = f.read()
                             else:
                                 raise AttributeError
@@ -300,15 +300,17 @@ class MLPAPI:
         train = shuffle(train, random_state=42)
         test = shuffle(test, random_state=42)
         val = shuffle(val, random_state=42)
+        if fileformat == 'pandas':
+            return pd.DataFrame(train), pd.DataFrame(val), pd.DataFrame(test)
         return train, val, test
 
 
 class MLPVLoader:
 
-    def __init__(self, scheme='A2', directory=None):
+    def __init__(self, scheme='A2', fileformat='pandas', directory=None):
         if directory is None:
             directory = os.path.join(os.path.dirname(__file__), '')
-        self.train, self.val, self.test = MLPAPI.load_dataset(fileformat='str', scheme=scheme, directory=directory)
+        self.train, self.val, self.test = MLPAPI.load_dataset(fileformat=fileformat, scheme=scheme, directory=directory)
 
     def get_mlpv(self):
         return self.train, self.val, self.test
