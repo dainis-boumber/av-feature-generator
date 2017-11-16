@@ -2,6 +2,8 @@ import data.MLP400AV.mlpapi as mlpapi
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 import textacy as tx
+import numpy as np
+from scipy import sparse
 
 def load(schema='A2', path_to_ds='../data/MLP400AV/'):
     loader = mlpapi.MLPVLoader(schema, fileformat='pandas', directory=path_to_ds)
@@ -29,14 +31,16 @@ def one_hot():
     train_data = train[1].append(train[3])
     val_data = val[1].append(val[3])
     test_data = test[1].append(test[3])  # col 1 is known col 3 is unknown
-    train_t, val_t, test_t = transform(train_data, val_data, test_data, CountVectorizer(binary=True))
-    train[1] = train_t[:train_t.shape[0] / 2, ]
-    train[3] = train_t[train_t.shape[0] / 2:train_t.shape[0], ]
-    val[1] = val_t[:val_t.shape[0] / 2, ]
-    val[3] = val_t[val_t.shape[0] / 2:val_t.shape[0], ]
-    test[1] = test_t[:test_t.shape[0] / 2, ]
-    test[3] = test_t[test_t.shape[0] / 2:test_t.shape[0], ]
-    return train, val, test
+    train_t, val_t, test_t = transform(train_data, val_data, test_data, CountVectorizer(binary=True, analyzer='char'))
+    ktrain = train_t[:train_t.shape[0] / 2, ]
+    utrain = train_t[train_t.shape[0] / 2:train_t.shape[0], ]
+    kval = val_t[:val_t.shape[0] / 2, ]
+    uval = val_t[val_t.shape[0] / 2:val_t.shape[0], ]
+    ktest = test_t[:test_t.shape[0] / 2, ]
+    utest = test_t[test_t.shape[0] / 2:test_t.shape[0], ]
+    return (np.array(ktrain), np.array(utrain), np.array(train[4])), \
+           (np.array(kval), np.array(uval), np.array(val[4])), (np.array(ktest),\
+                                                                np.array(utest), np.array(test[4]))
 
 def main():
     train, val, test = one_hot()
