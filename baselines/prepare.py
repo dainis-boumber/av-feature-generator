@@ -34,13 +34,17 @@ def one_hot():
     train_t, val_t, test_t = transform(train_data, val_data, test_data, CountVectorizer(binary=True, analyzer='char'))
     ktrain = train_t[:train_t.shape[0] / 2, ]
     utrain = train_t[train_t.shape[0] / 2:train_t.shape[0], ]
+    X_train = sparse.hstack((ktrain, utrain))
+    y_train = train[4].tolist()
     kval = val_t[:val_t.shape[0] / 2, ]
     uval = val_t[val_t.shape[0] / 2:val_t.shape[0], ]
+    X_val = sparse.hstack((kval, uval))
+    y_val = val[4].tolist()
     ktest = test_t[:test_t.shape[0] / 2, ]
     utest = test_t[test_t.shape[0] / 2:test_t.shape[0], ]
-    return (np.array(ktrain), np.array(utrain), np.array(train[4])), \
-           (np.array(kval), np.array(uval), np.array(val[4])), (np.array(ktest),\
-                                                                np.array(utest), np.array(test[4]))
+    X_test = sparse.hstack((ktest, utest))
+    y_test = test[4].tolist()
+    return (X_train, y_train), (X_val, y_val), (X_test, y_test)
 
 def main():
     train, val, test = one_hot()

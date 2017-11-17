@@ -5,14 +5,11 @@ import numpy as np
 from scipy import sparse
 
 def main():
-    (ktrain, utrain, ytrain), (kval, uval, yval),  (ktest, utest, ytest) = prep.one_hot()
-    train = np.hstack((ktrain, utrain))
-    val = sparse.hstack(kval, uval)
-    test = np.hstack((ktest, utest))
+    (X_train, y_train), (X_val, y_val), (X_test, y_test) = prep.one_hot()
     clf = LogisticRegression()
-    clf.fit(ktrain, ytrain)
-    pred = clf.predict(test)
-    acc = scorer.accuracy_score(ytest, pred)
+    clf.fit(X_train, y_train)
+    pred = clf.predict(X_test)
+    acc = scorer.accuracy_score(y_test, pred)
     print(acc)
 
 if __name__=='__main__':
