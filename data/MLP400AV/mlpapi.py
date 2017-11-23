@@ -33,6 +33,13 @@ class MLPAPI:
         'robert_tibshirani'
     )
 
+    #col indeces
+    K_AUTHOR = 0
+    K_PAPERS = 1
+    U_AUTHOR = 2
+    U_PAPERS = 3
+    LABEL = 4
+
     author_ix = 0
     papers_ix = 1
     pa_table_ix = 2
@@ -262,10 +269,11 @@ class MLPAPI:
                 reader = csv.reader(pt)
                 next(reader)
                 for row in reader:
-                    label = row[4]
-                    kauthor = row[0]
+                    label = row[MLPAPI.LABEL]
+                    kauthor = row[MLPAPI.K_AUTHOR]
                     try:
-                        with open(directory + '/' + label + '/' + row[0] + '/' + row[1], 'r') as f:
+                        with open(directory + '/' + label + '/' + row[MLPAPI.K_AUTHOR] + '/' + \
+                                          row[MLPAPI.K_PAPERS], 'r') as f:
                             if fileformat == 'lines':
                                 k = f.readlines()
                             elif fileformat == 'str' or fileformat == 'pandas':
@@ -275,10 +283,10 @@ class MLPAPI:
 
                         author = None
                         for author in MLPAPI.AUTHORS:
-                            if author in row[3]:
+                            if author in row[MLPAPI.U_PAPERS]:
                                 break
 
-                        with open(directory + '/' + label + '/' + author + '/' + row[3], 'r') as f:
+                        with open(directory + '/' + label + '/' + author + '/' + row[MLPAPI.U_PAPERS], 'r') as f:
                             if fileformat == 'lines':
                                 u = f.readlines()
                             elif fileformat == 'str' or fileformat == 'pandas':
@@ -286,7 +294,7 @@ class MLPAPI:
                             else:
                                 raise AttributeError
                     except UnicodeDecodeError:
-                        print(directory + '/' + label + '/' + row[0] + '/' + row[1], 'r')
+                        print(directory + '/' + label + '/' + row[MLPAPI.K_AUTHOR] + '/' + row[MLPAPI.K_PAPERS], 'r')
                         raise UnicodeDecodeError
 
                     if 'train' in path:
