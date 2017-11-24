@@ -5,10 +5,12 @@ import textacy as tx
 import numpy as np
 from scipy import sparse
 
+
 def load(schema='A2', path_to_ds='../data/MLP400AV/'):
     loader = mlpapi.MLPVLoader(schema, fileformat='pandas', directory=path_to_ds)
     train, val, test = loader.get_mlpv()
     return train, val, test
+
 
 def transform(X_train, X_val, X_test, vectorizer):
     vectorizer.fit(X_train)
@@ -17,7 +19,8 @@ def transform(X_train, X_val, X_test, vectorizer):
     test = vectorizer.transform(X_test)
     return train, val, test
 
-#bad unicode fix function clean('../data/MLP-400AV/YES/yee_whye_teh/yee_whye_teh_2_1.txt')
+
+# bad unicode fix function clean('../data/MLP-400AV/YES/yee_whye_teh/yee_whye_teh_2_1.txt')
 def clean(fname):
     text = tx.fileio.read.read_file(fname)
     text = tx.preprocess_text(fix_unicode=True, no_accents=True, transliterate=True, text=text)
@@ -25,6 +28,7 @@ def clean(fname):
     text = text.replace('?', 'f')
     with open(fname + '.txt', 'w') as f:
         f.write(text)
+
 
 def one_hot():
     train, val, test = load()
@@ -46,9 +50,10 @@ def one_hot():
     y_test = test[4].tolist()
     return (X_train, y_train), (X_val, y_val), (X_test, y_test)
 
+
 def main():
     train, val, test = one_hot()
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()
