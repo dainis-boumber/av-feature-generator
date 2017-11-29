@@ -281,6 +281,7 @@ class MLPAPI:
                             else:
                                 raise AttributeError
 
+                        # label the unknown file using author string in the file name
                         author = None
                         for author in MLPAPI.AUTHORS:
                             if author in row[MLPAPI.U_PAPERS]:
