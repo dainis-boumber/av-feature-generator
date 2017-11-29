@@ -1,4 +1,4 @@
-import prepare as prep
+import baselines.prepare as prep
 from sklearn.svm import LinearSVC
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.metrics import scorer
@@ -14,5 +14,7 @@ def main():
         acc = scorer.accuracy_score(y_test, pred)
         print(acc)
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     main()
+

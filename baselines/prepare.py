@@ -6,10 +6,12 @@ import spacy as spacy
 import numpy as np
 from scipy import sparse
 
+
 def load(schema='A2', path_to_ds='../data/MLP400AV/'):
     loader = mlpapi.MLPVLoader(schema, fileformat='pandas', directory=path_to_ds)
     train, val, test = loader.get_mlpv()
     return train, val, test
+
 
 def transform(X_train, X_val, X_test, vectorizer):
     vectorizer.fit(X_train)
@@ -18,7 +20,8 @@ def transform(X_train, X_val, X_test, vectorizer):
     test = vectorizer.transform(X_test)
     return train, val, test
 
-#bad unicode fix function clean('../data/MLP-400AV/YES/yee_whye_teh/yee_whye_teh_2_1.txt')
+
+# bad unicode fix function clean('../data/MLP-400AV/YES/yee_whye_teh/yee_whye_teh_2_1.txt')
 def clean(fname):
     text = tx.fileio.read.read_file(fname)
     text = tx.preprocess_text(fix_unicode=True, no_accents=True, transliterate=True, text=text)
@@ -26,6 +29,7 @@ def clean(fname):
     text = text.replace('?', 'f')
     with open(fname + '.txt', 'w') as f:
         f.write(text)
+
 
 def spacy_doc2vec():
     nlp = spacy.load('en_vectors_web_lg')
@@ -40,15 +44,17 @@ def spacy_doc2vec():
         docs_val.append(nlp(val_data[i]))
         docs_test.append(nlp(test_data[i]))
 
-    return (docs_tr[0:len(docs_tr)/2], docs_tr[len(docs_tr)/2:len(docs_tr)], y_train), \
+    return (docs_tr[0:len(docs_tr) / 2], docs_tr[len(docs_tr) / 2:len(docs_tr)], y_train), \
            (docs_val[0:len(docs_val) / 2], docs_val[len(docs_val) / 2:len(docs_val)], y_val), \
            (docs_test[0:len(docs_test) / 2], docs_test[len(docs_test) / 2:len(docs_test)], y_test)
+
 
 def spacy_doc2vec_sim(X):
     y = np.zeros(len(X))
     for i, sample in enumerate(X):
         y[i] = sample[0].similarity(sample[1])
     return y
+
 
 def load_data():
     train, val, test = load()
@@ -59,6 +65,7 @@ def load_data():
     y_val = val[4].tolist()
     y_test = test[4].tolist()
     return (train_data, y_train), (val_data, y_val), (test_data, y_test)
+
 
 def one_hot():
     (train_data, y_train), (val_data, y_val), (test_data, y_test) = load_data()
@@ -74,10 +81,11 @@ def one_hot():
     X_test = sparse.hstack((ktest, utest))
     return (X_train, y_train), (X_val, y_val), (X_test, y_test)
 
+
 def main():
     train, val, test = spacy_doc2vec()
     print(spacy_doc2vec_sim(train[0]))
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()
