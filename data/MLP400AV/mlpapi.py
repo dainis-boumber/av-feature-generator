@@ -9,7 +9,6 @@ from sklearn.utils import shuffle
 
 # API container, static methods only
 class MLPAPI:
-
     AUTHORS = (
         'geoffrey_hinton',
         'vapnik',
@@ -33,7 +32,7 @@ class MLPAPI:
         'robert_tibshirani'
     )
 
-    #col indeces
+    # col indeces
     K_AUTHOR = 0
     K_PAPERS = 1
     U_AUTHOR = 2
@@ -237,12 +236,12 @@ class MLPAPI:
                 tr_author_bins, tst_author_bins, val_author_bins = MLPAPI.tr_tst_val_split(author_bins)
                 for j, bins in enumerate((tr_author_bins, val_author_bins, tst_author_bins)):
                     yes_no, bins_sans_unknown = MLPAPI.make_unkown_papers(author_bins=bins, label=label,
-                                                                    paper_authors=paper_authors, scheme=scheme)
+                                                                          paper_authors=paper_authors, scheme=scheme)
                     pairs[j].extend(MLPAPI.make_pairs(label, yes_no=yes_no, bins=bins_sans_unknown))
                     shuffle(pairs[j])
             elif scheme == 'B':  # test train and val MAY intersect
                 yes_no, bins_sans_unknown = MLPAPI.make_unkown_papers(author_bins=author_bins, label=label,
-                                                                paper_authors=paper_authors, scheme=scheme)
+                                                                      paper_authors=paper_authors, scheme=scheme)
                 all_pairs.extend(MLPAPI.make_pairs(label, yes_no=yes_no, bins=bins_sans_unknown))
                 if i == len(labels) - 1:
                     shuffle(all_pairs)
@@ -256,9 +255,9 @@ class MLPAPI:
         return pairs
 
     @staticmethod
-    def load_dataset(fileformat='lines', scheme='A2', directory = os.path.join(os.path.dirname(__file__), ''),
+    def load_dataset(fileformat='lines', scheme='A2', directory=os.path.join(os.path.dirname(__file__), ''),
                      path_train='train.csv', path_test='test.csv', path_val='val.csv'):
-        train_test_val_paths = (directory + '/' + scheme + path_train,#ex.: /home/user/A2train.csv
+        train_test_val_paths = (directory + '/' + scheme + path_train,  # ex.: /home/user/A2train.csv
                                 directory + '/' + scheme + path_test,
                                 directory + '/' + scheme + path_val)
         train = []
@@ -315,7 +314,6 @@ class MLPAPI:
 
 
 class MLPVLoader:
-
     def __init__(self, scheme='A2', fileformat='pandas', directory=None):
         if directory is None:
             directory = os.path.join(os.path.dirname(__file__), '')

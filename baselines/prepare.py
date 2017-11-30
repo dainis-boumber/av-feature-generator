@@ -19,11 +19,19 @@ def load(schema='A2', path_to_ds='../data/MLP400AV/'):
     return train, val, test
 
 
-def transform(X_train, X_val, X_test, vectorizer):
+def transform(X_train, X_val, X_test, vectorizer:CountVectorizer):
     vectorizer.fit(X_train)
     train = vectorizer.transform(X_train)
     val = vectorizer.transform(X_val)
     test = vectorizer.transform(X_test)
+    return train, val, test
+
+
+def transform_tuple(X_train, X_val, X_test, vectorizer:CountVectorizer):
+    vectorizer.fit(X_train[0].append(X_train[1]))
+    train = tuple(vectorizer.transform(x) for x in X_train)
+    val = tuple(vectorizer.transform(x) for x in X_val)
+    test = tuple(vectorizer.transform(x) for x in X_test)
     return train, val, test
 
 
@@ -85,8 +93,31 @@ def load_data():
     return (train_data, y_train), (val_data, y_val), (test_data, y_test)
 
 
+def load_data_tuple():
+    data_pickle = Path("av400tuple.pickle")
+    if not data_pickle.exists():
+        logging.info("loading data structure from RAW")
+        train, val, test = load()
+        train_data = (train[1], (train[3]))
+        val_data = (val[1], val[3])
+        test_data = (test[1], test[3])  # col 1 is known col 3 is unknown
+        y_train = train[4].tolist()
+        y_val = val[4].tolist()
+        y_test = test[4].tolist()
+        logging.info("load data structure completed")
+
+        pickle.dump([train_data, val_data, test_data, y_train, y_val, y_test], open(data_pickle, mode="wb"))
+        logging.info("dumped all data structure in " + str(data_pickle))
+    else:
+        logging.info("loading data structure from PICKLE")
+        [train_data, val_data, test_data, y_train, y_val, y_test] = pickle.load(open(data_pickle, mode="rb"))
+        logging.info("load data structure completed")
+
+    return (train_data, y_train), (val_data, y_val), (test_data, y_test)
+
+
 def data_vector_sbs(vectorizer):
-    (train_data, y_train), (val_data, y_val), (test_data, y_test) = load_data()
+    (train_data, y_train), (val_data, y_val), (test_data, y_test) = load_data_tuple()
     train_t, val_t, test_t = transform(train_data, val_data, test_data, vectorizer)
     ktrain = train_t[0:train_t.shape[0] // 2, ]
     utrain = train_t[train_t.shape[0] // 2:train_t.shape[0], ]
@@ -101,8 +132,8 @@ def data_vector_sbs(vectorizer):
 
 
 def data_vector_diff(vectorizer):
-    (train_data, y_train), (val_data, y_val), (test_data, y_test) = load_data()
-    train_t, val_t, test_t = transform(train_data, val_data, test_data, vectorizer)
+    (train_data, y_train), (val_data, y_val), (test_data, y_test) = load_data_tuple()
+    train_t, val_t, test_t = transform_tuple(train_data, val_data, test_data, vectorizer)
     ktrain = train_t[0:train_t.shape[0] // 2, ]
     utrain = train_t[train_t.shape[0] // 2:train_t.shape[0], ]
     X_train = (ktrain - utrain).tocsr()
