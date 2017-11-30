@@ -54,6 +54,13 @@ def all_diff():
             logging.info("ACC: " + str(acc))
 
 
+def try_one():
+    (X_train, y_train), (X_val, y_val), (X_test, y_test) = prep.data_vector_diff(vec_method)
+    LinearSVC.fit(X_train, y_train)
+    pred = LinearSVC.predict(X_test)
+    acc = scorer.accuracy_score(y_test, pred)
+    logging.info("ACC: " + str(acc))
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
