@@ -51,7 +51,7 @@ def all_diff():
             clf.fit(X_train, y_train)
             pred = clf.predict(X_test)
             acc = scorer.accuracy_score(y_test, pred)
-            print(acc)
+            logging.info("ACC: " + str(acc))
 
 
 if __name__ == '__main__':
