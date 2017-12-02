@@ -76,7 +76,6 @@ class DataBuilderMLP(DataHelper):
         data = DataObject(self.problem_name, len(raw))
         data.raw = raw
         data.label_doc = label_doc
-
         return data
 
     def to_list_of_sent(self, sentence_data, sentence_count):

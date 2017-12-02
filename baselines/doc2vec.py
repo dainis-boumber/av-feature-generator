@@ -1,11 +1,12 @@
 import numpy as np
 import spacy as spacy
 
+import baselines.prepare as prepare
 
 
 def spacy_doc2vec():
     nlp = spacy.load('en_vectors_web_lg')
-    (train_data, y_train), (val_data, y_val), (test_data, y_test) = load_data()
+    (train_data, y_train), (val_data, y_val), (test_data, y_test) = prepare.load_data_tuple()
     docs_tr = []
     docs_val = []
     docs_test = []
@@ -31,3 +32,7 @@ def spacy_doc2vec_sim(X):
 def main():
     train, val, test = spacy_doc2vec()
     print(spacy_doc2vec_sim(train[0]))
+
+
+if __name__ == '__main__':
+    main()

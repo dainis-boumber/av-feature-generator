@@ -48,7 +48,6 @@ def transform_tuple(X_train, X_val, X_test, vectorizer:CountVectorizer):
     return train, val, test
 
 
-
 def data_vector_sbs(vectorizer):
     (train_data, train_y), (val_data, val_y), (test_data, test_y) = load_data_tuple()
     train_vec, val_vec, test_vec = transform_tuple(train_data, val_data, test_data, vectorizer)
@@ -69,6 +68,7 @@ def data_vector_diff(vectorizer):
 
 def main():
     pass
+
 
 if __name__ == '__main__':
     main()
