@@ -298,11 +298,11 @@ class MLPAPI:
                         raise UnicodeDecodeError
 
                     if 'train' in path:
-                        train.append((kauthor, k, author, u, label))
+                        train.append({'k_author': kauthor, 'k_doc': k, 'u_author': author, 'u_doc': u, 'label': label})
                     elif 'test' in path:
-                        test.append((kauthor, k, author, u, label))
+                        test.append({'k_author': kauthor, 'k_doc': k, 'u_author': author, 'u_doc': u, 'label': label})
                     elif 'val' in path:
-                        val.append((kauthor, k, author, u, label))
+                        val.append({'k_author': kauthor, 'k_doc': k, 'u_author': author, 'u_doc': u, 'label': label})
                     else:
                         raise ValueError
         train = shuffle(train, random_state=42)

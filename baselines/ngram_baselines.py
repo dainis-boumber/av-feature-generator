@@ -55,13 +55,15 @@ def all_diff():
 
 
 def try_one():
-    (X_train, y_train), (X_val, y_val), (X_test, y_test) = prep.data_vector_diff(vec_method)
-    LinearSVC.fit(X_train, y_train)
-    pred = LinearSVC.predict(X_test)
+    (X_train, y_train), (X_val, y_val), (X_test, y_test) =\
+        prep.data_vector_diff(CountVectorizer(binary=False, analyzer='word'))
+    model = LinearSVC()
+    model.fit(X_train, y_train)
+    pred = model.predict(X_test)
     acc = scorer.accuracy_score(y_test, pred)
     logging.info("ACC: " + str(acc))
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
-    all_diff()
+    try_one()

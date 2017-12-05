@@ -1,5 +1,7 @@
-import numpy as np
+from pathlib import Path
 import logging
+
+import numpy as np
 import textacy
 import nltk
 
@@ -13,19 +15,19 @@ from data_helper.DataHelpers import DataHelper
 from data_helper.Data import DataObject
 
 
-class DataBuilderMLP(DataHelper):
-    problem_name = "MLP"
+class DataBuilderML400(DataHelper):
+    problem_name = "ML400"
 
     def __init__(self, embed_dim, target_doc_len, target_sent_len, doc_as_sent=False, doc_level=True):
-        super(DataBuilderMLP, self).__init__(embed_dim=embed_dim, target_doc_len=target_doc_len,
-                                             target_sent_len=target_sent_len)
+        super(DataBuilderML400, self).__init__(embed_dim=embed_dim, target_doc_len=target_doc_len,
+                                               target_sent_len=target_sent_len)
 
         logging.info("setting: %s is %s", "doc_as_sent", doc_as_sent)
         self.doc_as_sent = doc_as_sent
         logging.info("setting: %s is %s", "sent_list_doc", doc_level)
         self.doc_level = doc_level
 
-        self.dataset_dir = self.data_path + 'hotel_balance_LengthFix1_3000per/'
+        self.dataset_dir = self.data_path + 'MLP400AV/'
         self.num_classes = 2  # true or false
 
         print("loading nltk model")
@@ -87,6 +89,32 @@ class DataBuilderMLP(DataHelper):
             index += sc
         return np.array(x)
 
+    def load_dataframe(self):
+        data_pickle = Path("av400tuple.pickle")
+        if not data_pickle.exists():
+            logging.info("loading data structure from RAW")
+            loader = MLPVLoader("A2", fileformat='pandas', directory=self.dataset_dir)
+            train, val, test = loader.get_mlpv()
+
+            train_y = train_data['label'].tolist()
+            val_y = val_data['label'].tolist()
+            test_y = test_data['label'].tolist()
+
+            train_data.drop(['k_author', 'u_author', 'label'], axis=1, inplace=True)
+            val_data.drop(['k_author', 'u_author', 'label'], axis=1, inplace=True)
+            test_data.drop(['k_author', 'u_author', 'label'], axis=1, inplace=True)
+
+            logging.info("load data structure completed")
+
+            pickle.dump([train_data, val_data, test_data, train_y, val_y, test_y], open(data_pickle, mode="wb"))
+            logging.info("dumped all data structure in " + str(data_pickle))
+        else:
+            logging.info("loading data structure from PICKLE")
+            [train_data, val_data, test_data, train_y, val_y, test_y] = pickle.load(open(data_pickle, mode="rb"))
+            logging.info("load data structure completed")
+
+        return (train_data, train_y), (val_data, val_y), (test_data, test_y)
+
     def load_all_data(self):
         data_loader = MLPVLoader(scheme="A2")
         train, vali, test = data_loader.get_mlpv()
@@ -97,5 +125,5 @@ class DataBuilderMLP(DataHelper):
 
 
 if __name__ == "__main__":
-    a = DataBuilderMLP(embed_dim=300, target_doc_len=64, target_sent_len=1024,
-                       doc_as_sent=False, doc_level=True)
+    a = DataBuilderML400(embed_dim=300, target_doc_len=64, target_sent_len=1024,
+                         doc_as_sent=False, doc_level=True)

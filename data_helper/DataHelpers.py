@@ -23,11 +23,12 @@ class DataHelper(object):
         self.target_sent_len = target_sent_len
 
         self.train_data = None
+        self.val_data = None
         self.test_data = None
         self.vocab = None
         self.vocab_inv = None
         self.embed_matrix = None
-        self.vocabulary_size = 20000
+        self.vocabulary_size = 30000
 
         self.glove_dir = os.path.join(os.path.dirname(__file__), 'glove/')
         self.glove_path = self.glove_dir + "glove.6B." + str(self.embedding_dim) + "d.txt"
