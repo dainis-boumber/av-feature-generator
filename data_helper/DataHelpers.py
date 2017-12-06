@@ -26,7 +26,6 @@ class DataHelper(object):
         self.val_data = None
         self.test_data = None
         self.vocab = None
-        self.vocab_inv = None
         self.embed_matrix = None
         self.vocabulary_size = 30000
 
@@ -35,12 +34,12 @@ class DataHelper(object):
 
         self.data_path = os.path.join(os.path.dirname(__file__), '..', 'data/')
 
-        # print("loading embedding.")
+        print("loading embedding.")
         # glove_pickle = os.path.join(os.path.dirname(__file__), 'glove.pickle')
-        # [self.glove_words, self.glove_vectors] = self.load_glove_vector()
+        self.glove_dict = self.load_glove_vector()
         # pickle.dump([self.glove_words, self.glove_vectors], open("glove.pickle", "wb"))
         # self.glove_words, self.glove_vectors = pickle.load(open(glove_pickle, "rb"))
-        # print("loading embedding completed.")
+        print("loading embedding completed.")
 
     def get_train_data(self):
         return self.train_data
@@ -50,9 +49,6 @@ class DataHelper(object):
 
     def get_vocab(self):
         return self.vocab
-
-    def get_vocab_inv(self):
-        return self.vocab_inv
 
     @staticmethod
     def clean_str(string):
@@ -82,22 +78,8 @@ class DataHelper(object):
         glove_words = [s[0] for s in glove_lines]
         vector_list = [s[1] for s in glove_lines]
         glove_vectors = np.array([np.fromstring(line, dtype=float, sep=' ') for line in vector_list])
-        return [glove_words, glove_vectors]
-
-    def build_glove_embedding(self, vocabulary_inv):
-        np.random.seed(10)
-        embed_matrix = []
-        std = np.std(self.glove_vectors[0, :])
-        for word in vocabulary_inv:
-            if word in self.glove_words:
-                word_index = self.glove_words.index(word)
-                embed_matrix.append(self.glove_vectors[word_index, :])
-            elif word == "<PAD>":
-                embed_matrix.append(np.zeros(self.embedding_dim))
-            else:
-                embed_matrix.append(np.random.normal(loc=0.0, scale=std, size=self.embedding_dim))
-        embed_matrix = np.array(embed_matrix)
-        return embed_matrix
+        embedding_dict = dict(zip(glove_words, glove_vectors))
+        return embedding_dict
 
     def pad_sentences_word(self, sentences, padding_word="<PAD/>"):
         """

@@ -3,7 +3,7 @@ import pickle
 import logging
 
 import numpy as np
-from spacy.attrs import ORTH
+import pandas as pd
 import textacy
 import nltk
 
@@ -35,6 +35,8 @@ class DataBuilderML400(DataHelper):
         self.dataset_dir = self.data_path + 'MLP400AV/'
         self.num_classes = 2  # true or false
 
+        self.tokenizer = None
+
         print("loading nltk model")
         self.sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
         self.tokenizer = MosesTokenizer()
@@ -65,26 +67,26 @@ class DataBuilderML400(DataHelper):
         else:
             return content
 
-    def proc_data(self, data, sent_split=True, word_split=False):
-        raw = []
-        label_doc = []
+    def clean_text(self, content):
+        content = content.replace("\n", " ")
+        content = textacy.preprocess_text(content, lowercase=True, no_contractions=True)
+        return content
 
-        one_row_train = data['k_doc'].append(data['u_doc'])
-        uniq_doc = one_row_train.unique()
-        k_tokenizer = Tokenizer(num_words=self.vocabulary_size)
-        k_tokenizer.fit_on_texts(uniq_doc)
-        vector_sequences = k_tokenizer.texts_to_sequences(uniq_doc)
+    def proc_data(self, data_raw, label, raw_to_vec, sent_split=True, word_split=False):
+        vector_sequences = data_raw.applymap(lambda x: raw_to_vec[x])
+        doc_label = np.array([1 if la == "YES" else 0 for la in label])
 
-        # uniq_doc = [self.str_2_sent_2_token(x, sent_split=sent_split, word_split=word_split) for x in uniq_doc]
-        # data.applymap(lambda x: self.str_2_sent_2_token(x, sent_split=sent_split, word_split=word_split))
+        logging.info("data shape: " + str(vector_sequences.shape))
+        logging.info("label shape: " + str(doc_label.shape))
 
         if self.doc_as_sent:
             raise NotImplementedError
 
-        data = DataObject(self.problem_name, len(raw))
-        data.raw = raw
-        data.label_doc = label_doc
-        return data
+        data_obj = DataObject(self.problem_name, len(doc_label))
+        data_obj.raw = data_raw
+        data_obj.label_doc = doc_label
+        data_obj.value = vector_sequences
+        return data_obj
 
     def load_dataframe(self):
         data_pickle = Path("av400tuple.pickle")
@@ -112,14 +114,38 @@ class DataBuilderML400(DataHelper):
 
         return (train_data, train_y), (val_data, val_y), (test_data, test_y)
 
+    def build_embedding_matrix(self):
+        embedding_matrix = np.zeros((len(self.vocab) + 1, self.embedding_dim))
+        for word, i in self.vocab.items():
+            embedding_vector = self.glove_dict.get(word)
+            if embedding_vector is not None:
+                # words not found in embedding index will be all-zeros.
+                embedding_matrix[i] = embedding_vector
+        return embedding_matrix
+
     def load_all_data(self):
         (train_data, train_y), (val_data, val_y), (test_data, test_y) = self.load_dataframe()
 
-        train = self.proc_data(train_data)
-        vali = self.proc_data(val_data)
-        test = self.proc_data(test_data)
+        all_data = pd.concat([train_data, val_data, test_data])
+        uniq_doc = pd.unique(all_data.values.ravel('K'))
+
+        self.tokenizer = Tokenizer(num_words=self.vocabulary_size)
+        self.tokenizer.fit_on_texts(uniq_doc)
+        uniq_seq = self.tokenizer.texts_to_sequences(uniq_doc)
+        uniq_seq = pad_sequences(uniq_seq, maxlen=65535, padding="post", truncating="post")
+
+        raw_to_vec = dict(zip(uniq_doc, uniq_seq))
+
+        self.train_data = self.proc_data(train_data, train_y, raw_to_vec)
+        self.val_data = self.proc_data(val_data, val_y, raw_to_vec)
+        self.test_data = self.proc_data(test_data, test_y, raw_to_vec)
+
+        self.vocab = self.tokenizer.word_index
+        self.embed_matrix =  self.build_embedding_matrix()
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+
     a = DataBuilderML400(embed_dim=300, target_doc_len=64, target_sent_len=1024,
                          doc_as_sent=False, doc_level=True)
