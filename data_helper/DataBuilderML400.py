@@ -1,7 +1,9 @@
 from pathlib import Path
+import pickle
 import logging
 
 import numpy as np
+from spacy.attrs import ORTH
 import textacy
 import nltk
 
@@ -9,6 +11,9 @@ nltk.download('punkt')
 nltk.download('perluniprops')
 nltk.download('nonbreaking_prefixes')
 from nltk.tokenize.moses import MosesTokenizer
+
+from tensorflow.python.keras.preprocessing.text import Tokenizer
+from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 
 from data.MLP400AV.mlpapi import MLPVLoader
 from data_helper.DataHelpers import DataHelper
@@ -55,6 +60,8 @@ class DataBuilderML400(DataHelper):
 
             else:
                 return content_sents
+        elif word_split:
+            self.tokenizer.tokenize(content)
         else:
             return content
 
@@ -62,15 +69,14 @@ class DataBuilderML400(DataHelper):
         raw = []
         label_doc = []
 
-        for data_tuple in data:
-            k, u, label = data_tuple
-            k = self.str_2_sent_2_token(k, sent_split=sent_split, word_split=word_split)
-            u = self.str_2_sent_2_token(u, sent_split=sent_split, word_split=word_split)
-            raw.append((k, u))
-            if "YES" == label:
-                label_doc.append(True)
-            else:
-                label_doc.append(False)
+        one_row_train = data['k_doc'].append(data['u_doc'])
+        uniq_doc = one_row_train.unique()
+        k_tokenizer = Tokenizer(num_words=self.vocabulary_size)
+        k_tokenizer.fit_on_texts(uniq_doc)
+        vector_sequences = k_tokenizer.texts_to_sequences(uniq_doc)
+
+        # uniq_doc = [self.str_2_sent_2_token(x, sent_split=sent_split, word_split=word_split) for x in uniq_doc]
+        # data.applymap(lambda x: self.str_2_sent_2_token(x, sent_split=sent_split, word_split=word_split))
 
         if self.doc_as_sent:
             raise NotImplementedError
@@ -80,21 +86,12 @@ class DataBuilderML400(DataHelper):
         data.label_doc = label_doc
         return data
 
-    def to_list_of_sent(self, sentence_data, sentence_count):
-        x = []
-        index = 0
-        for sc in sentence_count:
-            one_review = sentence_data[index:index + sc]
-            x.append(one_review)
-            index += sc
-        return np.array(x)
-
     def load_dataframe(self):
         data_pickle = Path("av400tuple.pickle")
         if not data_pickle.exists():
             logging.info("loading data structure from RAW")
             loader = MLPVLoader("A2", fileformat='pandas', directory=self.dataset_dir)
-            train, val, test = loader.get_mlpv()
+            train_data, val_data, test_data = loader.get_mlpv()
 
             train_y = train_data['label'].tolist()
             val_y = val_data['label'].tolist()
@@ -116,12 +113,11 @@ class DataBuilderML400(DataHelper):
         return (train_data, train_y), (val_data, val_y), (test_data, test_y)
 
     def load_all_data(self):
-        data_loader = MLPVLoader(scheme="A2")
-        train, vali, test = data_loader.get_mlpv()
+        (train_data, train_y), (val_data, val_y), (test_data, test_y) = self.load_dataframe()
 
-        train = self.proc_data(train)
-        vali = self.proc_data(vali)
-        test = self.proc_data(test)
+        train = self.proc_data(train_data)
+        vali = self.proc_data(val_data)
+        test = self.proc_data(test_data)
 
 
 if __name__ == "__main__":
