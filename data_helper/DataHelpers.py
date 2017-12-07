@@ -4,6 +4,7 @@ import logging
 import pickle
 import itertools
 from sklearn.preprocessing import OneHotEncoder
+from pathlib import Path
 import os
 from collections import Counter
 
@@ -30,16 +31,20 @@ class DataHelper(object):
         self.vocabulary_size = 30000
 
         self.glove_dir = os.path.join(os.path.dirname(__file__), 'glove/')
-        self.glove_path = self.glove_dir + "glove.6B." + str(self.embedding_dim) + "d.txt"
+        self.glove_path = Path(self.glove_dir + "glove.6B." + str(self.embedding_dim) + "d.txt")
 
         self.data_path = os.path.join(os.path.dirname(__file__), '..', 'data/')
 
-        print("loading embedding.")
-        # glove_pickle = os.path.join(os.path.dirname(__file__), 'glove.pickle')
-        self.glove_dict = self.load_glove_vector()
-        # pickle.dump([self.glove_words, self.glove_vectors], open("glove.pickle", "wb"))
-        # self.glove_words, self.glove_vectors = pickle.load(open(glove_pickle, "rb"))
-        print("loading embedding completed.")
+        glove_pickle = Path(os.path.join(self.glove_dir, "glove" + str(self.embedding_dim) + ".pickle") )
+        if not glove_pickle.exists():
+            print("loading GLOVE embedding.")
+            self.glove_dict = self.load_glove_vector()
+            print("loading embedding completed.")
+            pickle.dump(self.glove_dict, open(glove_pickle, "wb"))
+            print("glove embedding pickled.")
+        else:
+            self.glove_dict = pickle.load(open(glove_pickle, "rb"))
+            print("loaded GLOVE from pickle.")
 
     def get_train_data(self):
         return self.train_data

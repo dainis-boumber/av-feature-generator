@@ -1,15 +1,13 @@
 from pathlib import Path
 import pickle
 import logging
+from multiprocessing import Pool
 
 import numpy as np
 import pandas as pd
 import textacy
 import nltk
 
-nltk.download('punkt')
-nltk.download('perluniprops')
-nltk.download('nonbreaking_prefixes')
 from nltk.tokenize.moses import MosesTokenizer
 
 from tensorflow.python.keras.preprocessing.text import Tokenizer
@@ -23,14 +21,14 @@ from data_helper.Data import DataObject
 class DataBuilderML400(DataHelper):
     problem_name = "ML400"
 
-    def __init__(self, embed_dim, target_doc_len, target_sent_len, doc_as_sent=False, doc_level=True):
+    def __init__(self, embed_dim, target_doc_len, target_sent_len, sent_split=False, word_split=False):
         super(DataBuilderML400, self).__init__(embed_dim=embed_dim, target_doc_len=target_doc_len,
                                                target_sent_len=target_sent_len)
 
-        logging.info("setting: %s is %s", "doc_as_sent", doc_as_sent)
-        self.doc_as_sent = doc_as_sent
-        logging.info("setting: %s is %s", "sent_list_doc", doc_level)
-        self.doc_level = doc_level
+        logging.info("setting: %s is %s", "sent_split", sent_split)
+        self.sent_split = sent_split
+        logging.info("setting: %s is %s", "word_split", word_split)
+        self.word_split = word_split
 
         self.dataset_dir = self.data_path + 'MLP400AV/'
         self.num_classes = 2  # true or false
@@ -45,13 +43,8 @@ class DataBuilderML400(DataHelper):
         self.load_all_data()
 
     def str_2_sent_2_token(self, data, sent_split=True, word_split=False):
-        content = "".join(data)
-        content = content.replace("\n", " ")
-        content = textacy.preprocess_text(content, fix_unicode=True, lowercase=True,
-                                          transliterate=True, no_numbers=False, no_contractions=True, no_accents=True)
-
         if sent_split:
-            content_sents = self.sent_detector.tokenize(content)
+            content_sents = self.sent_detector.tokenize(data)
             content_sents = [s for s in content_sents if len(s) > 20]
 
             if word_split:
@@ -63,11 +56,12 @@ class DataBuilderML400(DataHelper):
             else:
                 return content_sents
         elif word_split:
-            self.tokenizer.tokenize(content)
+            self.tokenizer.tokenize(data)
         else:
-            return content
+            return data
 
-    def clean_text(self, content):
+    @staticmethod
+    def clean_text(content):
         content = content.replace("\n", " ")
         content = textacy.preprocess_text(content, lowercase=True, no_contractions=True)
         return content
@@ -79,7 +73,7 @@ class DataBuilderML400(DataHelper):
         logging.info("data shape: " + str(vector_sequences.shape))
         logging.info("label shape: " + str(doc_label.shape))
 
-        if self.doc_as_sent:
+        if self.sent_split:
             raise NotImplementedError
 
         data_obj = DataObject(self.problem_name, len(doc_label))
@@ -128,6 +122,10 @@ class DataBuilderML400(DataHelper):
 
         all_data = pd.concat([train_data, val_data, test_data])
         uniq_doc = pd.unique(all_data.values.ravel('K'))
+        logging.info("creating pool do to cleaning")
+        pool = Pool(processes=4)
+        pool.map(DataBuilderML400.clean_text, uniq_doc)
+        logging.info("cleaning done")
 
         self.tokenizer = Tokenizer(num_words=self.vocabulary_size)
         self.tokenizer.fit_on_texts(uniq_doc)
@@ -147,5 +145,4 @@ class DataBuilderML400(DataHelper):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    a = DataBuilderML400(embed_dim=300, target_doc_len=64, target_sent_len=1024,
-                         doc_as_sent=False, doc_level=True)
+    a = DataBuilderML400(embed_dim=100, target_doc_len=64, target_sent_len=1024)
