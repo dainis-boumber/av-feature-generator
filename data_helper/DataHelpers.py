@@ -8,11 +8,15 @@ from pathlib import Path
 import os
 from collections import Counter
 
+from data_helper.Data import DataObject
+
 
 class DataHelper(object):
-    def __init__(self, embed_dim, target_doc_len, target_sent_len):
+    def __init__(self, embed_dim, vocab_size, target_doc_len, target_sent_len):
         logging.info("setting: %s is %s", "embed_dim", embed_dim)
+        logging.info("setting: %s is %s", "vocab_size", vocab_size)
         logging.info("setting: %s is %s", "target_doc_len", target_doc_len)
+        logging.info("setting: %s is %s", "target_sent_len", target_sent_len)
 
         assert embed_dim is not None
         assert target_sent_len is not None
@@ -20,6 +24,7 @@ class DataHelper(object):
         self.num_classes = None
 
         self.embedding_dim = embed_dim
+        self.vocabulary_size = vocab_size
         self.target_doc_len = target_doc_len
         self.target_sent_len = target_sent_len
 
@@ -28,7 +33,6 @@ class DataHelper(object):
         self.test_data = None
         self.vocab = None
         self.embed_matrix = None
-        self.vocabulary_size = 30000
 
         self.glove_dir = os.path.join(os.path.dirname(__file__), 'glove/')
         self.glove_path = Path(self.glove_dir + "glove.6B." + str(self.embedding_dim) + "d.txt")
@@ -37,19 +41,22 @@ class DataHelper(object):
 
         glove_pickle = Path(os.path.join(self.glove_dir, "glove" + str(self.embedding_dim) + ".pickle") )
         if not glove_pickle.exists():
-            print("loading GLOVE embedding.")
+            logging.info("loading GLOVE embedding.")
             self.glove_dict = self.load_glove_vector()
-            print("loading embedding completed.")
+            logging.info("loading embedding completed.")
             pickle.dump(self.glove_dict, open(glove_pickle, "wb"))
-            print("glove embedding pickled.")
+            logging.info("glove embedding pickled.")
         else:
             self.glove_dict = pickle.load(open(glove_pickle, "rb"))
-            print("loaded GLOVE from pickle.")
+            logging.info("loaded GLOVE from pickle.")
 
-    def get_train_data(self):
+    def get_train_data(self) -> DataObject:
         return self.train_data
 
-    def get_test_data(self):
+    def get_val_data(self) -> DataObject:
+        return self.val_data
+
+    def get_test_data(self) -> DataObject:
         return self.test_data
 
     def get_vocab(self):

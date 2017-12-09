@@ -21,9 +21,9 @@ from data_helper.Data import DataObject
 class DataBuilderML400(DataHelper):
     problem_name = "ML400"
 
-    def __init__(self, embed_dim, target_doc_len, target_sent_len, sent_split=False, word_split=False):
-        super(DataBuilderML400, self).__init__(embed_dim=embed_dim, target_doc_len=target_doc_len,
-                                               target_sent_len=target_sent_len)
+    def __init__(self, embed_dim, vocab_size, target_doc_len, target_sent_len, sent_split=False, word_split=False):
+        super(DataBuilderML400, self).__init__(embed_dim=embed_dim, vocab_size=vocab_size,
+                                               target_doc_len=target_doc_len, target_sent_len=target_sent_len)
 
         logging.info("setting: %s is %s", "sent_split", sent_split)
         self.sent_split = sent_split
@@ -109,8 +109,8 @@ class DataBuilderML400(DataHelper):
         return (train_data, train_y), (val_data, val_y), (test_data, test_y)
 
     def build_embedding_matrix(self):
-        embedding_matrix = np.zeros((len(self.vocab) + 1, self.embedding_dim))
-        for word, i in self.vocab.items():
+        embedding_matrix = np.zeros((self.vocabulary_size + 1, self.embedding_dim))
+        for word, i in list(self.vocab.items())[:self.vocabulary_size]:
             embedding_vector = self.glove_dict.get(word)
             if embedding_vector is not None:
                 # words not found in embedding index will be all-zeros.
@@ -122,16 +122,21 @@ class DataBuilderML400(DataHelper):
 
         all_data = pd.concat([train_data, val_data, test_data])
         uniq_doc = pd.unique(all_data.values.ravel('K'))
-        logging.info("creating pool do to cleaning")
+
         pool = Pool(processes=4)
-        pool.map(DataBuilderML400.clean_text, uniq_doc)
-        logging.info("cleaning done")
+        uniq_doc_clean = pool.map(DataBuilderML400.clean_text, uniq_doc)
 
+        # doc_lens = [len(d) for d in uniq_doc]
+        # print( sorted(doc_lens, reverse=True)[:20] )
+
+        # notice we limit vocab size here
         self.tokenizer = Tokenizer(num_words=self.vocabulary_size)
-        self.tokenizer.fit_on_texts(uniq_doc)
-        uniq_seq = self.tokenizer.texts_to_sequences(uniq_doc)
-        uniq_seq = pad_sequences(uniq_seq, maxlen=65535, padding="post", truncating="post")
+        self.tokenizer.fit_on_texts(uniq_doc_clean)
+        uniq_seq = self.tokenizer.texts_to_sequences(uniq_doc_clean)
+        uniq_seq = pad_sequences(uniq_seq, maxlen=self.target_doc_len,
+                                 padding="post", truncating="post")
 
+        # a map from raw doc to vec sequence
         raw_to_vec = dict(zip(uniq_doc, uniq_seq))
 
         self.train_data = self.proc_data(train_data, train_y, raw_to_vec)
@@ -145,4 +150,4 @@ class DataBuilderML400(DataHelper):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    a = DataBuilderML400(embed_dim=100, target_doc_len=64, target_sent_len=1024)
+    a = DataBuilderML400(embed_dim=100, vocab_size=30000, target_doc_len=10000, target_sent_len=1024)
