@@ -1,6 +1,6 @@
 import logging
+import numpy as np
 import tensorflow as tf
-
 import keras
 
 from keras.layers import Input
@@ -33,10 +33,9 @@ def try_one():
     u_input = Input(shape=(doc_len,), dtype='int32', name="u_doc_input")
     u_embedded_seq = embedding_layer(u_input)
 
-
     # shared first conv
     conv_first = Conv1D(filters=128, kernel_size=5, activation='relu')
-    poll_first = MaxPooling1D(pool_size=256)
+    poll_first = MaxPooling1D(pool_size=1024)
 
     k_cov = conv_first(k_embedded_seq)
     k_poll = poll_first(k_cov)
@@ -56,8 +55,12 @@ def try_one():
                   metrics=['acc'])
 
     # happy learning!
-    model.fit([train_data.value["k_doc"].values, train_data.value["u_doc"].values], train_data.label_doc,
-              validation_data=([val_data.value["k_doc"].values, val_data.value["u_doc"].values], train_data.label_doc),
+    model.fit([np.stack(train_data.value["k_doc"].as_matrix()), np.stack(train_data.value["u_doc"].as_matrix())],
+              train_data.label_doc,
+              validation_data=(
+                  [np.stack(val_data.value["k_doc"].as_matrix()),
+                   np.stack(val_data.value["u_doc"].as_matrix())],
+                  val_data.label_doc),
               epochs=4, batch_size=32)
 
 
